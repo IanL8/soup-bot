@@ -1,0 +1,2 @@
+# soup-bot
+Discord bot.
