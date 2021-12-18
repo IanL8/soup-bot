@@ -21,7 +21,7 @@ class SoupBotClient(discord.Client):
     #
     # init
     async def on_ready(self):
-        print(f'{self.user} has connected to Discord')
+        print(f"{self.user} has connected to Discord")
 
     #
     # on message
