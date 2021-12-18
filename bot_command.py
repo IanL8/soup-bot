@@ -1,6 +1,10 @@
+#
+# imports
 import random
 import urllib.request
 
+#
+# global vars
 word_site = "https://www.mit.edu/~ecprice/wordlist.10000"
 
 magic_8_ball_options = ["It is certain.",
