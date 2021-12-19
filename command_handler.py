@@ -30,13 +30,18 @@ magic_8_ball_options = ["It is certain.",
                         ]
 
 
-class BotCommand:
-    def __init__(self, name, flag):
+class CommandHandler(object):
+    #
+    # init
+    def __init__(self, name, guild, flag):
         self.name = name
+        self.guild = guild
         self.flag = flag
         temp = str(urllib.request.urlopen(word_site).read()).replace("b'", "")
         self.words = temp.split("\\n")
 
+    #
+    # handles basic commands
     def pass_command(self, command, name):
         cmdList = command.split(" ")
         #
@@ -96,5 +101,7 @@ class BotCommand:
         # git
         elif command.startswith(self.flag + "git"):
             return "https://github.com/IanL8/soup-bot"
+        #
+        # defaults if an invalid command is passed
         else:
             return "none!@E"
