@@ -19,6 +19,7 @@ class SoupBotClient(discord.Client):
     def __init__(self, **options):
         super().__init__(**options)
         self.commandHandlers = dict()
+        self.intents.guilds = True
 
     #
     # on connection to discord
@@ -26,6 +27,11 @@ class SoupBotClient(discord.Client):
         print(self.user.name + " has connected to Discord")
         for g in self.guilds:
             self.commandHandlers[g] = command_handler.CommandHandler(self.user.name, str(g), FLAG)
+
+    #
+    # on guild join
+    async def on_guild_join(self, guild):
+        self.commandHandlers[guild] = command_handler.CommandHandler(self.user.name, str(guild), FLAG)
 
     #
     # on message
