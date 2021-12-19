@@ -5,32 +5,37 @@ import discord
 from dotenv import load_dotenv
 #
 # project imports
-import bot_command
+import command_handler
 #
 # get .env values
 load_dotenv("values.env")
 TOKEN = os.getenv("DISCORD_TOKEN")
 FLAG = os.getenv("BOT_FLAG")
 
-#
-# global vars
-botCMD = bot_command.BotCommand("SoupBot", FLAG)
-
 
 class SoupBotClient(discord.Client):
     #
     # init
+    def __init__(self, **options):
+        super().__init__(**options)
+        self.commandHandlers = dict()
+
+    #
+    # on connection to discord
     async def on_ready(self):
-        print("SoupBot has connected to Discord")
+        print(self.user.name + " has connected to Discord")
+        for g in self.guilds:
+            self.commandHandlers[g] = command_handler.CommandHandler(self.user.name, str(g), FLAG)
 
     #
     # on message
     async def on_message(self, message):
         if message.author == self.user:
             return
+        handler = self.commandHandlers[message.guild]
 
         if message.content.startswith(FLAG):
-            temp = botCMD.pass_command(message.content, str(message.author.name))
+            temp = handler.pass_command(message.content, str(message.author.name))
             if temp == "none!@E":
                 pass
             else:
