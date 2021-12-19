@@ -3,9 +3,11 @@
 import os
 import discord
 from dotenv import load_dotenv
+
 #
 # project imports
 import command_handler
+
 #
 # get .env values
 load_dotenv("values.env")
