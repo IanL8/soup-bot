@@ -29,6 +29,7 @@ magic_8_ball_options = ["It is certain.",
                         "Very doubtful."
                         ]
 
+
 class CommandHandler(object):
     #
     # init
@@ -48,7 +49,7 @@ class CommandHandler(object):
         # help
         if command.startswith(self.flag + "help"):
             return "Commands: hello, bye, roll <d#>(100 default), word, phrase <number of words>, 8ball <question>, " \
-                   "lookup <league name>, which <options separated by commas>, git"
+                   "lookup <league name>, which <options separated by commas>, count, git"
         #
         # hello
         elif command.startswith(self.flag + "hello"):
