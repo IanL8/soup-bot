@@ -29,7 +29,6 @@ magic_8_ball_options = ["It is certain.",
                         "Very doubtful."
                         ]
 
-
 class CommandHandler(object):
     #
     # init
@@ -39,6 +38,7 @@ class CommandHandler(object):
         self.flag = flag
         temp = str(urllib.request.urlopen(word_site).read()).replace("b'", "")
         self.words = temp.split("\\n")
+        self.counter = 0
 
     #
     # handles basic commands
@@ -101,6 +101,11 @@ class CommandHandler(object):
         # git
         elif command.startswith(self.flag + "git"):
             return "https://github.com/IanL8/soup-bot"
+        #
+        # counter
+        elif command.startswith(self.flag + "count"):
+            self.counter += 1
+            return str(self.counter)
         #
         # defaults if an invalid command is passed
         else:
