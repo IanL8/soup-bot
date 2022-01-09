@@ -4,6 +4,10 @@ import random
 import urllib.request
 
 #
+# project imports
+import file_handler as fh
+
+#
 # global vars
 word_site = "https://www.mit.edu/~ecprice/wordlist.10000"
 
@@ -30,16 +34,36 @@ magic_8_ball_options = ["It is certain.",
                         ]
 
 
+data = fh.get_data()
+
+
+#
+# functions
+def get_words():
+    temp = str(urllib.request.urlopen(word_site).read()).replace("b'", "")
+    return temp.split("\\n")
+
+
+def finalize():
+    fh.write_data(data)
+
+
 class CommandHandler(object):
+    #
+    # constants
+    WORDS = get_words()
+
     #
     # init
     def __init__(self, name, guild, flag):
         self.name = name
         self.guild = guild
         self.flag = flag
-        temp = str(urllib.request.urlopen(word_site).read()).replace("b'", "")
-        self.words = temp.split("\\n")
         self.counter = 0
+        if guild in data.keys():
+            self.counter = data[guild]
+        else:
+            data[guild] = 0
 
     #
     # handles basic commands
@@ -70,7 +94,7 @@ class CommandHandler(object):
         #
         # word
         elif command.startswith(self.flag + "word"):
-            return self.words[int(random.random() * len(self.words))]
+            return self.WORDS[int(random.random() * len(self.WORDS))]
         #
         # phrase
         elif command.startswith(self.flag + "phrase"):
@@ -104,13 +128,23 @@ class CommandHandler(object):
             return "https://github.com/IanL8/soup-bot"
         #
         # counter
+        elif command.startswith(self.flag + "counter"):
+            return "Current value: " + str(self.counter)
+        #
+        # count
         elif command.startswith(self.flag + "count"):
-            self.counter += 1
-            return str(self.counter)
+            s = ""
+            if random.random() < .01:
+                self.counter = 0
+                s = "Oh no! " + name + " has reset the counter to "
+            else:
+                self.counter += 1
+            data[self.guild] = self.counter
+            return s + str(self.counter)
         #
-        #
+        # true
         elif command.startswith(self.flag + "true"):
-            return ("TRUE" if random.random() > .5 else "FALSE") + " <:LULW:801145828923408453>"
+            return ("TRUE" if random.random() > .49 else "FALSE") + " <:LULW:801145828923408453>"
         #
         # defaults if an invalid command is passed
         else:

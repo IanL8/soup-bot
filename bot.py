@@ -49,6 +49,12 @@ class SoupBotClient(discord.Client):
             else:
                 await message.channel.send(temp)
 
+    #
+    # on close
+    async def close(self):
+        command_handler.finalize()
+        print(self.user.name + " has disconnected from Discord")
+
 
 client = SoupBotClient()
 client.run(TOKEN)
