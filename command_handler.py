@@ -34,7 +34,7 @@ magic_8_ball_options = ["It is certain.",
                         ]
 
 
-data = fh.get_data()
+data = fh.read_data()
 
 
 #
@@ -73,7 +73,7 @@ class CommandHandler(object):
         # help
         if command.startswith(self.flag + "help"):
             return "Commands: hello, bye, roll <d#>(100 default), word, phrase <number of words>, 8ball <question>, " \
-                   "lookup <league name>, which <options separated by commas>, count, git"
+                   "lookup <league name>, which <options separated by commas>, counter, count, git"
         #
         # hello
         elif command.startswith(self.flag + "hello"):
@@ -85,7 +85,6 @@ class CommandHandler(object):
         #
         # roll
         elif command.startswith(self.flag + "roll"):
-            temp = None
             if len(cmdList) == 1 or not cmdList[1].isdigit() or cmdList[1] == "0":
                 temp = int(random.random() * 100) + 1
             else:
@@ -103,7 +102,7 @@ class CommandHandler(object):
             if len(cmdList) > 1 and cmdList[1].isdigit() and cmdList[1] != "0":
                 k = int(cmdList[1])
             for i in range(k):
-                temp = temp + self.words[int(random.random() * len(self.words))] + " "
+                temp = temp + self.WORDS[int(random.random() * len(self.WORDS))] + " "
             return temp
         #
         # 8ball

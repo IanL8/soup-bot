@@ -1,6 +1,6 @@
 #
 # functions
-def get_data():
+def read_data():
     temp = dict()
     f = open("bot_data.txt", "r")
     k = f.readline().rstrip()
