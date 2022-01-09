@@ -110,7 +110,7 @@ class CommandHandler(object):
         #
         #
         elif command.startswith(self.flag + "true"):
-            return ("TRUE" if random.random() > .5 else "FALSE") + " <:LULW:929603643693482046>"
+            return ("TRUE" if random.random() > .5 else "FALSE") + " <:LULW:801145828923408453>"
         #
         # defaults if an invalid command is passed
         else:
