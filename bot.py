@@ -52,7 +52,7 @@ class SoupBotClient(discord.Client):
     #
     # on close
     async def close(self):
-        command_handler.finalize()
+        command_handler.close()
         print(self.user.name + " has disconnected from Discord")
 
 

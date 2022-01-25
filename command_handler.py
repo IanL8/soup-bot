@@ -44,7 +44,7 @@ def get_words():
     return temp.split("\\n")
 
 
-def finalize():
+def close():
     fh.write_data(data)
 
 
@@ -52,6 +52,7 @@ class CommandHandler(object):
     #
     # constants
     WORDS = get_words()
+    FORTUNES = fh.get_fortunes()
 
     #
     # init
@@ -73,7 +74,7 @@ class CommandHandler(object):
         # help
         if command.startswith(self.flag + "help"):
             return "Commands: hello, bye, roll <d#>(100 default), word, phrase <number of words>, 8ball <question>, " \
-                   "lookup <league name>, which <options separated by commas>, counter, count, git"
+                   "lookup <league name>, which <options separated by commas>, counter, count, fortune, git"
         #
         # hello
         elif command.startswith(self.flag + "hello"):
@@ -144,6 +145,10 @@ class CommandHandler(object):
         # true
         elif command.startswith(self.flag + "true"):
             return ("TRUE" if random.random() > .49 else "FALSE") + " <:LULW:801145828923408453>"
+        #
+        # defaults if an invalid command is passed
+        elif command.startswith(self.flag + "fortune"):
+            return self.FORTUNES[int(random.random() * len(self.FORTUNES))]
         #
         # defaults if an invalid command is passed
         else:
