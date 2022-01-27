@@ -1,7 +1,7 @@
 #
 # imports
 import random
-import urllib.request
+import time
 
 #
 # project imports
@@ -15,10 +15,11 @@ class CommandHandler(object):
         self.name = name
         self.guild = guild
         self.flag = flag
+        self.userTimers = dict()  # userTimers[userID][timeType{fortune,etc}]->time
 
     #
     # handles basic commands
-    def pass_command(self, command, name):
+    def pass_command(self, command, author):
         cmdList = command.split(" ")
         #
         # help
@@ -28,11 +29,11 @@ class CommandHandler(object):
         #
         # hello
         elif command.startswith(self.flag + "hello"):
-            return "hello " + name
+            return "hello " + author.name
         #
         # bye
         elif command.startswith(self.flag + "bye"):
-            return "bye " + name
+            return "bye " + author.name
         #
         # roll
         elif command.startswith(self.flag + "roll"):
@@ -81,8 +82,13 @@ class CommandHandler(object):
         elif command.startswith(self.flag + "true"):
             return ("TRUE" if random.random() > .49 else "FALSE") + " <:LULW:801145828923408453>"
         #
-        # defaults if an invalid command is passed
+        # fortune
         elif command.startswith(self.flag + "fortune"):
+            if author.id in self.userTimers: #and "fortune" in self.userTimers[author.id]:
+                t = time.time() - self.userTimers[author.id]  #["fortune"]
+                if t < 86400:
+                    return util.time_to_string(86400 - t) + " until next fortune redeem."
+            self.userTimers[author.id] = time.time()
             return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
         #
         # defaults if an invalid command is passed

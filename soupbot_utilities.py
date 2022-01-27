@@ -16,6 +16,21 @@ def read_file_to_list(src):
     return temp
 
 
+def time_to_string(t):
+    timeUnits = [(86400, "days"), (3600, "hours"), (60, "min")]
+    s = ""
+    for i, j in timeUnits:
+        temp = int(t / i)
+        t = t % i
+        if temp > 0:
+            s += str(temp) + " " + j + ", "
+    if t > 0:
+        s += str(int(t)) + " sec"
+    else:
+        s = s[:len(s)-2]
+    return s
+
+
 #
 # constants
 MAGIC_8BALL_LIST = ["It is certain.",
