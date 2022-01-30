@@ -86,8 +86,8 @@ class CommandHandler(object):
         elif command.startswith(self.flag + "fortune"):
             if author.id in self.userTimers: #and "fortune" in self.userTimers[author.id]:
                 t = time.time() - self.userTimers[author.id]  #["fortune"]
-                if t < 86400:
-                    return util.time_to_string(86400 - t) + " until next fortune redeem."
+                if t < 72000:
+                    return util.time_to_string(72000 - t) + " until next fortune redeem."
             self.userTimers[author.id] = time.time()
             return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
         #
