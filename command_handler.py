@@ -9,13 +9,12 @@ import soupbot_utilities as util
 import database_handler
 
 
-def find_id(user_id, li):
+def find_user_id(user_id, li):
     for element in li:
         for e in element:
-            if user_id == e:
-                yield True
-
-    yield False
+            if str(user_id) == e:
+                return True
+    return False
 
 
 class CommandHandler(object):
@@ -95,7 +94,7 @@ class CommandHandler(object):
         elif command.startswith(self.flag + "fortune"):
             li = [k for k in database_handler.make_query("SELECT user_id FROM UserTimers")]
             i = 0
-            if not find_id(author.id, li):
+            if not find_user_id(author.id, li):
                 database_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) "
                                             "VALUES (\'{fort}\', {id});"
                                             .format(fort="fortune", id=author.id))
@@ -106,7 +105,7 @@ class CommandHandler(object):
                                                    .format(id=author.id))
                 i = [t for t in temp][0][0]
             t = time.time() - i
-            if t < 72000:
+            if t < 1:
                 return util.time_to_string(72000 - t) + " until next fortune redeem."
 
             database_handler.make_query("UPDATE UserTimers "
