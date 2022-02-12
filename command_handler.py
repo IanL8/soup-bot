@@ -96,12 +96,12 @@ class CommandHandler(object):
             i = 0
             if not find_user_id(author.id, li):
                 database_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) "
-                                            "VALUES (\'{fort}\', {id});"
+                                            "VALUES (\'{fort}\', \'{id}\');"
                                             .format(fort="fortune", id=author.id))
             else:
                 temp = database_handler.make_query("SELECT start_time "
                                                    "FROM UserTimers "
-                                                   "WHERE user_id={id};"
+                                                   "WHERE user_id=\'{id}\';"
                                                    .format(id=author.id))
                 i = [t for t in temp][0][0]
             t = time.time() - i
@@ -109,7 +109,7 @@ class CommandHandler(object):
                 return util.time_to_string(72000 - t) + " until next fortune redeem."
 
             database_handler.make_query("UPDATE UserTimers "
-                                        "SET start_time={t} WHERE user_id={id};"
+                                        "SET start_time={t} WHERE user_id=\'{id}\';"
                                         .format(t=int(time.time()), id=author.id))
 
             return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
