@@ -7,12 +7,14 @@ from dotenv import load_dotenv
 #
 # project imports
 import command_handler
+import database_handler
 
 #
 # get .env values
 load_dotenv("values.env")
 TOKEN = os.getenv("DISCORD_TOKEN")
 FLAG = os.getenv("BOT_FLAG")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 
 
 class SoupBotClient(discord.Client):
@@ -22,6 +24,7 @@ class SoupBotClient(discord.Client):
         super().__init__(**options)
         self.commandHandlers = dict()
         self.intents.guilds = True
+        database_handler.connect(MYSQL_PASSWORD)
 
     #
     # on connection to discord
@@ -52,6 +55,7 @@ class SoupBotClient(discord.Client):
     #
     # on close
     async def close(self):
+        database_handler.disconnect()
         print(self.user.name + " has disconnected from Discord")
 
 

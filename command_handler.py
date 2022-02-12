@@ -6,6 +6,16 @@ import time
 #
 # project imports
 import soupbot_utilities as util
+import database_handler
+
+
+def find_id(user_id, li):
+    for element in li:
+        for e in element:
+            if user_id == e:
+                yield True
+
+    yield False
 
 
 class CommandHandler(object):
@@ -15,7 +25,6 @@ class CommandHandler(object):
         self.name = name
         self.guild = guild
         self.flag = flag
-        self.userTimers = dict()  # userTimers[userID][timeType{fortune,etc}]->time
 
     #
     # handles basic commands
@@ -84,11 +93,26 @@ class CommandHandler(object):
         #
         # fortune
         elif command.startswith(self.flag + "fortune"):
-            if author.id in self.userTimers: #and "fortune" in self.userTimers[author.id]:
-                t = time.time() - self.userTimers[author.id]  #["fortune"]
-                if t < 72000:
-                    return util.time_to_string(72000 - t) + " until next fortune redeem."
-            self.userTimers[author.id] = time.time()
+            li = [k for k in database_handler.make_query("SELECT user_id FROM UserTimers")]
+            i = 0
+            if not find_id(author.id, li):
+                database_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) "
+                                            "VALUES (\'{fort}\', {id});"
+                                            .format(fort="fortune", id=author.id))
+            else:
+                temp = database_handler.make_query("SELECT start_time "
+                                                   "FROM UserTimers "
+                                                   "WHERE user_id={id};"
+                                                   .format(id=author.id))
+                i = [t for t in temp][0][0]
+            t = time.time() - i
+            if t < 72000:
+                return util.time_to_string(72000 - t) + " until next fortune redeem."
+
+            database_handler.make_query("UPDATE UserTimers "
+                                        "SET start_time={t} WHERE user_id={id};"
+                                        .format(t=int(time.time()), id=author.id))
+
             return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
         #
         # defaults if an invalid command is passed
