@@ -105,7 +105,7 @@ class CommandHandler(object):
                                                    .format(id=author.id))
                 i = [t for t in temp][0][0]
             t = time.time() - i
-            if t < 1:
+            if t < 72000:
                 return util.time_to_string(72000 - t) + " until next fortune redeem."
 
             database_handler.make_query("UPDATE UserTimers "
