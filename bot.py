@@ -24,14 +24,24 @@ class SoupBotClient(discord.Client):
         super().__init__(**options)
         self.commandHandlers = dict()
         self.intents.guilds = True
-        database_handler.connect(MYSQL_PASSWORD)
 
     #
     # on connection to discord
     async def on_ready(self):
-        print(self.user.name + " has connected to Discord")
         for g in self.guilds:
             self.commandHandlers[g] = command_handler.CommandHandler(self.user.name, str(g), FLAG)
+        if not database_handler.isConnected():
+            database_handler.connect(MYSQL_PASSWORD)
+            print("Connected to mysql")
+        print(self.user.name + " has connected to Discord")
+
+#
+    # on close
+    async def close(self):
+        if database_handler.isConnected():
+            database_handler.disconnect()
+            print("Disconnected from mysql")
+        print(self.user.name + " has disconnected from Discord")
 
     #
     # on guild join
@@ -51,12 +61,6 @@ class SoupBotClient(discord.Client):
                 pass
             else:
                 await message.channel.send(temp)
-
-    #
-    # on close
-    async def close(self):
-        database_handler.disconnect()
-        print(self.user.name + " has disconnected from Discord")
 
 
 client = SoupBotClient()
