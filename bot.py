@@ -14,7 +14,8 @@ import database_handler
 load_dotenv("values.env")
 TOKEN = os.getenv("DISCORD_TOKEN")
 FLAG = os.getenv("BOT_FLAG")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
+MYSQL_USERNAME, MYSQL_PASSWORD = os.getenv("MYSQL_USERNAME"), os.getenv("MYSQL_PASSWORD")
+MYSQL_HOST, MYSQL_DB = os.getenv("MYSQL_HOST"), os.getenv("MYSQL_DB")
 
 
 class SoupBotClient(discord.Client):
@@ -30,17 +31,13 @@ class SoupBotClient(discord.Client):
     async def on_ready(self):
         for g in self.guilds:
             self.commandHandlers[g] = command_handler.CommandHandler(self.user.name, str(g), FLAG)
-        if not database_handler.isConnected():
-            database_handler.connect(MYSQL_PASSWORD)
-            print("Connected to mysql")
+        database_handler.connect(MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB)
         print(self.user.name + " has connected to Discord")
 
 #
     # on close
     async def close(self):
-        if database_handler.isConnected():
-            database_handler.disconnect()
-            print("Disconnected from mysql")
+        database_handler.disconnect()
         print(self.user.name + " has disconnected from Discord")
 
     #
