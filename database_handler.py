@@ -1,6 +1,6 @@
-import mysql.connector
+import pymysql
 
-cnx = None
+conn = None
 cursor = None
 
 activeConnection = False
@@ -10,19 +10,27 @@ def isConnected():
     return activeConnection
 
 
-def connect(password):
-    global cnx, cursor, activeConnection
-    cnx = mysql.connector.connect(user="root", password=password, host="localhost", database="soupbot")
-    cnx.autocommit = True
-    cursor = cnx.cursor()
-    activeConnection = True
+def connect(username, password, host, db):
+    global conn, cursor, activeConnection
+    if not activeConnection:
+        conn = pymysql.connect(user=username, password=password, host=host, database=db)
+        conn.autocommit(True)
+        cursor = conn.cursor()
+        activeConnection = True
+        print("Connection to mysql successful")
+    else:
+        print("Error: Connection to mysql rejected")
 
 
 def disconnect():
-    global cnx, cursor, activeConnection
-    cursor.close()
-    cnx.close()
-    activeConnection = False
+    global conn, cursor, activeConnection
+    if activeConnection:
+        cursor.close()
+        conn.close()
+        activeConnection = False
+        print("Disconnection from mysql successful")
+    else:
+        print("Error: Disconnection from mysql rejected")
 
 
 def make_query(query):
