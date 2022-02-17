@@ -34,7 +34,7 @@ class SoupBotClient(discord.Client):
         database_handler.connect(MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB)
         print(self.user.name + " has connected to Discord")
 
-#
+    #
     # on close
     async def close(self):
         database_handler.disconnect()
