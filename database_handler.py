@@ -33,7 +33,10 @@ def disconnect():
         print("Error: Disconnection from mysql rejected")
 
 
-def make_query(query):
+def make_query(query, values=tuple()):
     global cursor
-    cursor.execute(query)
+    if len(values) > 0:
+        cursor.execute(query, values)
+    else:
+        cursor.execute(query)
     return cursor

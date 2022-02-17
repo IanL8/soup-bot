@@ -12,7 +12,7 @@ import database_handler
 def find_user_id(user_id, li):
     for element in li:
         for e in element:
-            if str(user_id) == e:
+            if user_id == e:
                 return True
     return False
 
@@ -93,24 +93,21 @@ class CommandHandler(object):
         # fortune
         elif command.startswith(self.flag + "fortune"):
             li = [k for k in database_handler.make_query("SELECT user_id FROM UserTimers")]
+            userId = str(author.id)
             i = 0
-            if not find_user_id(author.id, li):
-                database_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) "
-                                            "VALUES (\'{fort}\', \'{id}\');"
-                                            .format(fort="fortune", id=author.id))
+            if not find_user_id(userId, li):
+                query = "INSERT INTO UserTimers (timer_name, user_id) VALUES (%s, %s);"
+                database_handler.make_query(query, ("fortune", userId))
             else:
-                temp = database_handler.make_query("SELECT start_time "
-                                                   "FROM UserTimers "
-                                                   "WHERE user_id=\'{id}\';"
-                                                   .format(id=author.id))
+                query = "SELECT start_time FROM UserTimers WHERE user_id=%s;"
+                temp = database_handler.make_query(query, (userId, ))
                 i = [t for t in temp][0][0]
             t = time.time() - i
             if t < 72000:
                 return util.time_to_string(72000 - t) + " until next fortune redeem."
 
-            database_handler.make_query("UPDATE UserTimers "
-                                        "SET start_time={t} WHERE user_id=\'{id}\';"
-                                        .format(t=int(time.time()), id=author.id))
+            query = "UPDATE UserTimers SET start_time=%s WHERE user_id=%s;"
+            database_handler.make_query(query, (int(time.time()), userId))
 
             return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
         #
