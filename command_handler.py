@@ -92,22 +92,21 @@ class CommandHandler(object):
         #
         # fortune
         elif command.startswith(self.flag + "fortune"):
-            li = [k for k in database_handler.make_query("SELECT user_id FROM UserTimers")]
+            li = database_handler.make_query("SELECT user_id FROM UserTimers")
             userId = str(author.id)
             i = 0
             if not find_user_id(userId, li):
-                query = "INSERT INTO UserTimers (timer_name, user_id) VALUES (%s, %s);"
-                database_handler.make_query(query, ("fortune", userId))
+                database_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) VALUES (%s, %s);",
+                                            ("fortune", userId))
             else:
-                query = "SELECT start_time FROM UserTimers WHERE user_id=%s;"
-                temp = database_handler.make_query(query, (userId, ))
-                i = [t for t in temp][0][0]
+                temp = database_handler.make_query("SELECT start_time FROM UserTimers WHERE user_id=%s;", (userId, ))
+                i = temp[0][0]
             t = time.time() - i
             if t < 72000:
                 return util.time_to_string(72000 - t) + " until next fortune redeem."
 
-            query = "UPDATE UserTimers SET start_time=%s WHERE user_id=%s;"
-            database_handler.make_query(query, (int(time.time()), userId))
+            database_handler.make_query("UPDATE UserTimers SET start_time=%s WHERE user_id=%s;",
+                                        (int(time.time()), userId))
 
             return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
         #
