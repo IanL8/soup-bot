@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 # project imports
 import command_handler
 import database_handler
+import soupbot_utilities as util
 
 #
 # get .env values
@@ -25,20 +26,20 @@ class SoupBotClient(discord.Client):
         super().__init__(**options)
         self.commandHandlers = dict()
         self.intents.guilds = True
+        database_handler.initialize(MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB)
 
     #
     # on connection to discord
     async def on_ready(self):
         for g in self.guilds:
             self.commandHandlers[g] = command_handler.CommandHandler(self.user.name, str(g), FLAG)
-        database_handler.connect(MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB)
-        print(self.user.name + " has connected to Discord")
+        util.timed_message(self.user.name + " has connected to Discord")
 
     #
     # on close
     async def close(self):
         database_handler.disconnect()
-        print(self.user.name + " has disconnected from Discord")
+        util.timed_message(self.user.name + " has disconnected from Discord")
 
     #
     # on guild join
