@@ -1,6 +1,7 @@
 #
 # imports
 import urllib.request
+import time
 
 
 #
@@ -29,6 +30,16 @@ def time_to_string(t):
     else:
         s = s[:len(s)-2]
     return s
+
+
+def get_date():
+    t = time.localtime()
+    return "{month}/{day}:{hour}:{minute}:{sec}"\
+        .format(month=t[1], day=t[2], hour=t[3], minute=t[4], sec=t[5])
+
+
+def timed_message(s):
+    print("{date}: {msg}".format(date=get_date(), msg=s))
 
 
 #
