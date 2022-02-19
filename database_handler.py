@@ -43,14 +43,32 @@ def disconnect():
 
 
 def make_query(query, values=tuple()):
-    global cursor, activeConnection
+    global conn, cursor, activeConnection
     try:
         if len(values) > 0:
             cursor.execute(query, values)
         else:
             cursor.execute(query)
     except BrokenPipeError:
+        util.timed_message("BrokenPipeError")
         util.timed_message(str(BrokenPipeError))
+        util.timed_message(str(BrokenPipeError.args))
+        disconnect()
+        connect()
+    except pymysql.err.InterfaceError:
+        util.timed_message("InterfaceError")
+        util.timed_message(str(pymysql.err.InterfaceError.args))
+        util.timed_message(str(pymysql.err.InterfaceError))
+        disconnect()
+        connect()
+    except pymysql.err.OperationalError:
+        util.timed_message("OperationError")
+        util.timed_message(str(pymysql.err.InterfaceError.args))
+        util.timed_message(str(pymysql.err.InterfaceError))
+        disconnect()
+        connect()
+    except:
+        util.timed_message("Generic Error")
         disconnect()
         connect()
     return [c for c in cursor]
