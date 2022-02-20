@@ -92,21 +92,29 @@ class CommandHandler(object):
         #
         # fortune
         elif command.startswith(self.flag + "fortune"):
-            li = database_handler.make_query("SELECT user_id FROM UserTimers")
+            k, li = database_handler.make_query("SELECT user_id FROM UserTimers")
+            if k == 0:
+                return "[Error] Bad query"
             userId = str(author.id)
             i = 0
             if not find_user_id(userId, li):
-                database_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) VALUES (%s, %s);",
-                                            ("fortune", userId))
+                k, li = database_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) VALUES (%s, %s);",
+                                                    ("fortune", userId))
+                if k == 0:
+                    return "[Error] Bad query"
             else:
-                temp = database_handler.make_query("SELECT start_time FROM UserTimers WHERE user_id=%s;", (userId, ))
+                k, temp = database_handler.make_query("SELECT start_time FROM UserTimers WHERE user_id=%s;", (userId,))
+                if k == 0:
+                    return "[Error] Bad query"
                 i = temp[0][0]
             t = time.time() - i
             if t < 72000:
                 return util.time_to_string(72000 - t) + " until next fortune redeem."
 
-            database_handler.make_query("UPDATE UserTimers SET start_time=%s WHERE user_id=%s;",
-                                        (int(time.time()), userId))
+            k, li = database_handler.make_query("UPDATE UserTimers SET start_time=%s WHERE user_id=%s;",
+                                                (int(time.time()), userId))
+            if k == 0:
+                return "[Error] Bad query"
 
             return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
         #
