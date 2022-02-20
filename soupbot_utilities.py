@@ -34,7 +34,7 @@ def time_to_string(t):
 
 def get_date():
     t = time.localtime()
-    return "{month}/{day}:{hour}:{minute}:{sec}"\
+    return "{month:02}/{day:02}: {hour:02}:{minute:02}:{sec:02}"\
         .format(month=t[1], day=t[2], hour=t[3], minute=t[4], sec=t[5])
 
 
