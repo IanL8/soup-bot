@@ -8,11 +8,11 @@ import time
 # functions
 def read_file_to_list(src):
     temp = []
-    f = open("src/fort.txt")
+    f = open(src)
     s = f.readline()
     while len(s) > 0:
         temp.insert(0, s)
-        s = f.readline()
+        s = f.readline().strip()
     f.close()
     return temp
 
@@ -65,6 +65,7 @@ MAGIC_8BALL_LIST = ["It is certain.",
                     "Outlook not so good.",
                     "Very doubtful."
                     ]
-WORD_LIST = str(urllib.request.urlopen("https://www.mit.edu/~ecprice/wordlist.10000").read()).replace("b'", "") \
-    .split("\\n")
+# WORD_LIST = str(urllib.request.urlopen("https://www.mit.edu/~ecprice/wordlist.10000").read()).replace("b'", "") \
+#     .split("\\n")
+WORD_LIST = read_file_to_list("src/word_list.txt")
 FORTUNES = read_file_to_list("src/fort.txt")
