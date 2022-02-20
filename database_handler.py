@@ -27,7 +27,7 @@ def connect():
         activeConnection = True
         util.timed_message("Connection successful")
     else:
-        util.timed_message("Error: Already connected")
+        util.timed_message("[Error] Already connected")
 
 
 def disconnect():
@@ -39,36 +39,41 @@ def disconnect():
         activeConnection = False
         util.timed_message("Disconnection successful")
     else:
-        util.timed_message("Error: Not connected")
+        util.timed_message("[Error] Not connected")
 
 
+# returns either (1, query result) if successful, or (0, empty list) if unsuccessful
 def make_query(query, values=tuple()):
     global conn, cursor, activeConnection
+    queryType = query.split(" ")[0]
+    #
+    # attempt query
     try:
+        util.timed_message("Attempting {s} query...".format(s=queryType))
         if len(values) > 0:
             cursor.execute(query, values)
         else:
             cursor.execute(query)
-    except BrokenPipeError:
-        util.timed_message("BrokenPipeError")
-        util.timed_message(str(BrokenPipeError))
-        util.timed_message(str(BrokenPipeError.args))
+    except pymysql.err.OperationalError as inst1:
+        util.timed_message("[Error] OperationError")
+        util.timed_message(str(inst1))
+        util.timed_message(str(inst1.args))
+        util.timed_message("Restarting connection...")
         disconnect()
         connect()
-    except pymysql.err.InterfaceError:
-        util.timed_message("InterfaceError")
-        util.timed_message(str(pymysql.err.InterfaceError.args))
-        util.timed_message(str(pymysql.err.InterfaceError))
-        disconnect()
-        connect()
-    except pymysql.err.OperationalError:
-        util.timed_message("OperationError")
-        util.timed_message(str(pymysql.err.InterfaceError.args))
-        util.timed_message(str(pymysql.err.InterfaceError))
-        disconnect()
-        connect()
-    except:
-        util.timed_message("Generic Error")
-        disconnect()
-        connect()
-    return [c for c in cursor]
+        #
+        # attempt query again
+        util.timed_message("Reattempting {s} query...".format(s=queryType))
+        try:
+            if len(values) > 0:
+                cursor.execute(query, values)
+            else:
+                cursor.execute(query)
+        except pymysql.err.OperationalError as inst2:
+            util.timed_message("[Error] OperationError")
+            util.timed_message(str(inst2))
+            util.timed_message(str(inst2.args))
+            return 0, list()
+
+    util.timed_message("{s} query successful".format(s=queryType))
+    return 1, [c for c in cursor]
