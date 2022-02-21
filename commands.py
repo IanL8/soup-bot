@@ -4,7 +4,11 @@ import time
 import soupbot_utilities as util
 import database_handler as db_handler
 
+#
+# helper functions
 
+
+# find id in cursor.execute() output
 def find_user_id(user_id, li):
     for element in li:
         for e in element:
@@ -59,11 +63,11 @@ def lookup(args, author):
 def which(args, author):
     if len(args) == 0:
         return "No options specified."
-    temp = list()
+    tempString = ""
     for a in args:
-        if "," in a:
-            temp.append(a.replace(",", ""))
-    return temp[int(random.random() * len(temp))]
+        tempString += a
+    tempList = tempString.split("'")
+    return tempList[int(random.random() * len(tempList))]
 
 
 def fortune(args, author):
