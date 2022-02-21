@@ -66,7 +66,7 @@ def which(args, author):
     tempString = ""
     for a in args:
         tempString += a
-    tempList = tempString.split("'")
+    tempList = tempString.split(",")
     return tempList[int(random.random() * len(tempList))]
 
 
