@@ -71,30 +71,41 @@ def which(args, author):
 
 
 def fortune(args, author):
-    k, li = db_handler.make_query("SELECT user_id FROM UserTimers")
+    #
+    # local vars
+    k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
+    output = list()             # holds the output of the query in make_query()
+    userId = str(author.id)     # holds the user's ID
+    lastUsage = 0               # holds the time of the last usage of the cmd
+
+    # check if userId is already in the table
+    k, output = db_handler.make_query("SELECT user_id FROM UserTimers")
     if k == 0:
         return "[Error] Bad query"
-    userId = str(author.id)
-    i = 0
-    if not find_user_id(userId, li):
-        k, li = db_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) VALUES (%s, %s);",
-                                      ("fortune", userId))
+
+    # if not, add them to the table
+    if not find_user_id(userId, output):
+        k, output = db_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) VALUES (%s, %s);",
+                                          ("fortune", userId))
         if k == 0:
             return "[Error] Bad query"
+    # if they are, fetch the last time fortune was used
     else:
-        k, temp = db_handler.make_query("SELECT start_time FROM UserTimers WHERE user_id=%s;", (userId,))
+        k, output = db_handler.make_query("SELECT start_time FROM UserTimers WHERE user_id=%s;", (userId,))
         if k == 0:
             return "[Error] Bad query"
-        i = temp[0][0]
-    t = time.time() - i
+        lastUsage = output[0][0]
+
+    # if it has not been 20 hrs, return the time remaining to the next use
+    t = time.time() - lastUsage
     if t < 72000:
         return util.time_to_string(72000 - t) + " until next fortune redeem."
 
-    k, li = db_handler.make_query("UPDATE UserTimers SET start_time=%s WHERE user_id=%s;",
-                                  (int(time.time()), userId))
+    # update the table with the current time and return the fortune
+    k, output = db_handler.make_query("UPDATE UserTimers SET start_time=%s WHERE user_id=%s;",
+                                      (int(time.time()), userId))
     if k == 0:
         return "[Error] Bad query"
-
     return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
 
 
