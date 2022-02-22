@@ -51,10 +51,9 @@ class SoupBotClient(discord.Client):
     async def on_message(self, message):
         if message.author == self.user:
             return
-        handler = self.commandHandlers[message.guild]
 
         if message.content.startswith(FLAG):
-            temp = handler.pass_command(message.content, message.author)
+            temp = self.commandHandlers[message.guild].pass_command(message.content, message.author)
             if temp == "none!@E":
                 pass
             else:
