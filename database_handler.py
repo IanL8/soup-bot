@@ -49,18 +49,17 @@ def make_query(query, values=tuple()):
     #
     # attempt query
     try:
-        util.timed_message("Attempting {s} query...".format(s=queryType))
         if len(values) > 0:
             cursor.execute(query, values)
         else:
             cursor.execute(query)
     except pymysql.err.OperationalError as inst1:
-        util.timed_message("[Error] OperationError")
-        util.timed_message(str(inst1))
+        util.timed_message("[Error] OperationError on {s} query".format(s=queryType))
         util.timed_message(str(inst1.args))
         util.timed_message("Restarting connection...")
         disconnect()
         connect()
+        util.timed_message("Restart successful")
         #
         # attempt query again
         util.timed_message("Reattempting {s} query...".format(s=queryType))
@@ -70,9 +69,9 @@ def make_query(query, values=tuple()):
             else:
                 cursor.execute(query)
         except pymysql.err.OperationalError as inst2:
-            util.timed_message("[Error] OperationError")
-            util.timed_message(str(inst2))
+            util.timed_message("[Error] OperationError on {s} query".format(s=queryType))
             util.timed_message(str(inst2.args))
+            util.timed_message("{s} query unsuccessful".format(s=queryType))
             return 0, list()
 
     util.timed_message("{s} query successful".format(s=queryType))
