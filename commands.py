@@ -39,6 +39,11 @@ def bye(args, author):
     return "bye {s}".format(s=author.name)
 
 
+# true
+def true_lulw(args, author):
+    return ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
+
+
 # roll <#>
 def roll(args, author):
     k = 100
@@ -133,5 +138,5 @@ def git(args, author):
 # dictionaries
 
 # dict of basic cmds
-COMMAND_LIST = {"help": cmd_help, "hello": hello, "bye": bye, "roll": roll, "word": word, "phrase": phrase,
+COMMAND_LIST = {"help": cmd_help, "hello": hello, "bye": bye, "true": true_lulw, "roll": roll, "word": word, "phrase": phrase,
                 "8ball": magic_8Ball, "lookup": lookup, "which": which, "fortune": fortune, "git": git}
