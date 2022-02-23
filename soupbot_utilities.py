@@ -1,11 +1,12 @@
 #
 # imports
-import urllib.request
 import time
 
 
 #
 # functions
+
+# creates a list of strings from a txt file
 def read_file_to_list(src):
     temp = []
     f = open(src)
@@ -17,7 +18,19 @@ def read_file_to_list(src):
     return temp
 
 
-def time_to_string(t):
+# creates a string from a list with sep between the elements
+def list_to_string(li, sep=" "):
+    temp = ""
+    for i, e in enumerate(li):
+        if i < len(li)-1:
+            temp += e.strip() + sep
+        else:
+            temp += e
+    return temp
+
+
+# takes a time t in seconds and gives the time in days, hours, min, sec
+def time_remaining_to_string(t):
     timeUnits = [(86400, "days"), (3600, "hours"), (60, "min")]
     s = ""
     for i, j in timeUnits:
@@ -32,13 +45,15 @@ def time_to_string(t):
     return s
 
 
+# returns the current date and time
 def get_date():
     t = time.localtime()
     return "{month:02}/{day:02}: {hour:02}:{minute:02}:{sec:02}"\
         .format(month=t[1], day=t[2], hour=t[3], minute=t[4], sec=t[5])
 
 
-def timed_message(s):
+# prints a message s with a timestamp
+def soup_log(s):
     print("{date}: {msg}".format(date=get_date(), msg=s))
 
 
@@ -65,7 +80,5 @@ MAGIC_8BALL_LIST = ["It is certain.",
                     "Outlook not so good.",
                     "Very doubtful."
                     ]
-# WORD_LIST = str(urllib.request.urlopen("https://www.mit.edu/~ecprice/wordlist.10000").read()).replace("b'", "") \
-#     .split("\\n")
-WORD_LIST = read_file_to_list("src/word_list.txt")
+WORD_LIST = read_file_to_list("src/word_list.txt")  # list of words from https://www.mit.edu/~ecprice/wordlist.10000
 FORTUNES = read_file_to_list("src/fort.txt")
