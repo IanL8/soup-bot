@@ -25,25 +25,23 @@ class SoupBotClient(discord.Client):
     # init
     def __init__(self, **options):
         super().__init__(**options)
-        self.commandHandlers = dict()
         self.intents.guilds = True
-        database_handler.initialize(MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB)
+        #
+        # init and connect to db
+        self.db_handler = database_handler.DatabaseHandler(MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB)
+        self.db_handler.connect()
+        #
+        # init cmd_handler
+        self.cmd_handler = command_handler.CommandHandler(self.db_handler)
 
     # on connection to discord
     async def on_ready(self):
-        database_handler.connect()
-        for g in self.guilds:
-            self.commandHandlers[g] = command_handler.CommandHandler(self.user.name, str(g), FLAG)
         util.soup_log(self.user.name + " has connected to Discord")
 
     # on close
     async def close(self):
-        database_handler.disconnect()
+        self.db_handler.disconnect()
         util.soup_log(self.user.name + " has disconnected from Discord")
-
-    # on guild join
-    async def on_guild_join(self, guild):
-        self.commandHandlers[guild] = command_handler.CommandHandler(self.user.name, str(guild), FLAG)
 
     # on message
     async def on_message(self, message):
@@ -51,7 +49,7 @@ class SoupBotClient(discord.Client):
             return
 
         if message.content.startswith(FLAG):
-            temp = self.commandHandlers[message.guild].pass_command(message.content, message.author)
+            temp = self.cmd_handler.pass_command(message, message.author)
             if temp == "none!@E":
                 pass
             else:

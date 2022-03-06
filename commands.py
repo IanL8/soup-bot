@@ -6,7 +6,6 @@ import time
 #
 # project imports
 import soupbot_utilities as util
-import database_handler as db_handler
 
 
 #
@@ -25,27 +24,17 @@ def find_user_id(user_id, li):
 # basic cmds
 
 # help
-def cmd_help(args, author):
-    return "Commands: {s}".format(s=util.list_to_string(COMMAND_LIST.keys(), ", "))
-
-
-# hello
-def hello(args, author):
-    return "hello {s}".format(s=author.name)
-
-
-# bye
-def bye(args, author):
-    return "bye {s}".format(s=author.name)
+def cmd_help(args):
+    return "Commands: {s}".format(s=util.list_to_string(ALL_CMDS, ", "))
 
 
 # true
-def true_lulw(args, author):
+def true_lulw(args):
     return ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
 
 
 # roll <#>
-def roll(args, author):
+def roll(args):
     k = 100
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
         k = int(args[0])
@@ -53,12 +42,12 @@ def roll(args, author):
 
 
 # word
-def word(args="", author=""):
+def word(args=""):
     return util.WORD_LIST[int(random.random() * len(util.WORD_LIST))]
 
 
 # phrase <#>
-def phrase(args, author):
+def phrase(args):
     k = 2
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
         k = int(args[0])
@@ -69,19 +58,19 @@ def phrase(args, author):
 
 
 # 8ball
-def magic_8Ball(args, author):
+def magic_8Ball(args):
     return util.MAGIC_8BALL_LIST[int(random.random() * len(util.MAGIC_8BALL_LIST))]
 
 
 # lookup <name>
-def lookup(args, author):
+def lookup(args):
     if len(args) == 0:
         return "No name specified."
     return "https://na.op.gg/summoner/userName=" + args[0]
 
 
 # which <options>
-def which(args, author):
+def which(args):
     tempList = [s.strip() for s in util.list_to_string(args).split(",")]
     while "" in tempList:
         tempList.remove("")
@@ -90,8 +79,15 @@ def which(args, author):
     return tempList[int(random.random() * len(tempList))]
 
 
+def git(args):
+    return "https://github.com/IanL8/soup-bot"
+
+
+#
+# database cmds
+
 # fortune
-def fortune(args, author):
+def fortune(db_handler, args, author):
     #
     # local vars
     k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
@@ -130,13 +126,20 @@ def fortune(args, author):
     return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
 
 
-def git(args, author):
-    return "https://github.com/IanL8/soup-bot"
-
-
 #
 # dictionaries
 
 # dict of basic cmds
-COMMAND_LIST = {"help": cmd_help, "hello": hello, "bye": bye, "true": true_lulw, "roll": roll, "word": word, "phrase": phrase,
-                "8ball": magic_8Ball, "lookup": lookup, "which": which, "fortune": fortune, "git": git}
+BASIC_COMMANDS = {"help": cmd_help, "true": true_lulw, "roll": roll, "word": word,
+                  "phrase": phrase, "8ball": magic_8Ball, "lookup": lookup, "which": which, "git": git}
+
+# dict of cmds that require DB access
+DB_ACCESS_COMMANDS = {"fortune": fortune}
+
+
+# list of all cmds
+def make_cmd_list():
+    temp = list(BASIC_COMMANDS.keys())
+    temp += (list(DB_ACCESS_COMMANDS.keys()))
+    return temp
+ALL_CMDS = make_cmd_list()
