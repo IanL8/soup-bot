@@ -20,12 +20,12 @@ class CommandHandler(object):
         #
         # basic commands
         if cmd in cmds.BASIC_COMMANDS.keys():
-            util.soup_log("[cmd] {s:8} command successful".format(s=cmd))
+            # util.soup_log("[cmd] {s:8} command successful".format(s=cmd))
             return cmds.BASIC_COMMANDS[cmd](cmdArgs)
         #
         # db access commands
         if cmd in cmds.DB_ACCESS_COMMANDS.keys():
-            util.soup_log("[cmd] {s:8} command successful".format(s=cmd))
+            # util.soup_log("[cmd] {s:8} command successful".format(s=cmd))
             return cmds.DB_ACCESS_COMMANDS[cmd](self.db_handler, cmdArgs, author)
         #
         # defaults if an invalid command is passed
