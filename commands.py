@@ -11,14 +11,6 @@ import soupbot_utilities as util
 #
 # helper functions
 
-# find id in cursor.execute() output
-def find_user_id(user_id, li):
-    for element in li:
-        for e in element:
-            if user_id == e:
-                return True
-    return False
-
 
 #
 # basic cmds
@@ -87,28 +79,27 @@ def git(args):
 # database cmds
 
 # fortune
-def fortune(db_handler, args, author):
+def fortune(dbHandler, args, uid):
     #
     # local vars
     k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
     output = list()             # holds the output of the query in make_query()
-    userId = str(author.id)     # holds the user's ID
     lastUsage = 0               # holds the time of the last usage of the cmd
 
     # check if userId is already in the table
-    k, output = db_handler.make_query("SELECT user_id FROM UserTimers")
+    k, output = dbHandler.make_query("SELECT tid FROM UserTimers WHERE uid=%s;", (uid,))
     if k == 0:
         return "[Error] Bad query"
 
     # if not, add them to the table
-    if not find_user_id(userId, output):
-        k, output = db_handler.make_query("INSERT INTO UserTimers (timer_name, user_id) VALUES (%s, %s);",
-                                          ("fortune", userId))
+    if not util.find_in_list("fortune", output):
+        k, output = dbHandler.make_query("INSERT INTO UserTimers (tid, uid) VALUES (%s, %s);",
+                                         ("fortune", uid))
         if k == 0:
             return "[Error] Bad query"
     # if they are, fetch the last time fortune was used
     else:
-        k, output = db_handler.make_query("SELECT start_time FROM UserTimers WHERE user_id=%s;", (userId,))
+        k, output = dbHandler.make_query("SELECT start_time FROM UserTimers WHERE uid=%s;", (uid,))
         if k == 0:
             return "[Error] Bad query"
         lastUsage = output[0][0]
@@ -119,11 +110,37 @@ def fortune(db_handler, args, author):
         return util.time_remaining_to_string(72000 - t) + " until next fortune redeem."
 
     # update the table with the current time and return the fortune
-    k, output = db_handler.make_query("UPDATE UserTimers SET start_time=%s WHERE user_id=%s;",
-                                      (int(time.time()), userId))
+    k, output = dbHandler.make_query("UPDATE UserTimers SET start_time=%s WHERE uid=%s;",
+                                     (int(time.time()), uid))
     if k == 0:
         return "[Error] Bad query"
     return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
+
+
+#
+# admin commands
+
+# change prefix
+def change_prefix(cmdHandler, dbHandler, uid, gid, newPrefix):
+    if len(newPrefix) < 0 or len(newPrefix) > 2:
+        return "Bad prefix"
+    #
+    # local vars
+    k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
+    output = list()             # holds the output of the query in make_query()
+
+    k, output = dbHandler.make_query("SELECT gid FROM Guilds WHERE owner_id=%s;", (uid, ))
+    if k == 0:
+        return "[Error] Bad query"
+
+    if util.find_in_list(gid, output):
+        k, output = dbHandler.make_query("UPDATE Guilds SET flag=%s WHERE gid=%s;", (newPrefix, gid))
+        if k == 0:
+            return "[Error] Bad query"
+        cmdHandler.set_flag(newPrefix)
+        return "Change successful"
+
+    return "You do not have the permissions for this command"
 
 
 #
@@ -136,10 +153,16 @@ BASIC_COMMANDS = {"help": cmd_help, "true": true_lulw, "roll": roll, "word": wor
 # dict of cmds that require DB access
 DB_ACCESS_COMMANDS = {"fortune": fortune}
 
+# dict of admin cmds
+ADMIN_COMMANDS = {"changeprefix": change_prefix}
+
 
 # list of all cmds
 def make_cmd_list():
     temp = list(BASIC_COMMANDS.keys())
-    temp += (list(DB_ACCESS_COMMANDS.keys()))
+    temp += list(DB_ACCESS_COMMANDS.keys())
+    temp += list(ADMIN_COMMANDS.keys())
     return temp
+
+
 ALL_CMDS = make_cmd_list()

@@ -74,3 +74,35 @@ class DatabaseHandler(object):
 
         util.soup_log("[SQL] {s} query successful".format(s=queryType))
         return 1, [c for c in self.cursor]
+
+    def add_guild(self, guild):
+        #
+        # local vars
+        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
+        output = list()             # holds the output of the query in make_query()
+        gid = str(guild.id)         # holds the guild's ID
+
+        k, output = self.make_query("SELECT gid FROM Guilds;")
+        if k == 0:
+            return 0
+
+        if not util.find_in_list(gid, output):
+            k, output = self.make_query("INSERT INTO Guilds (gid, general_chat, owner_id) VALUES (%s, %s, %s);",
+                                        (gid, str(guild.text_channels[0].id), str(guild.owner_id)))
+            if k == 0:
+                return 0
+            for m in guild.members:
+                if not m.bot:
+                    k, output = self.make_query("INSERT INTO Users (uid, gid) VALUES (%s, %s);", (str(m.id), gid))
+                    if k == 0:
+                        return 0
+        return 1
+
+    def get_flag(self, gid):
+        #
+        # local vars
+        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
+        output = list()             # holds the output of the query in make_query()
+
+        k, output = self.make_query("SELECT flag FROM Guilds WHERE gid=%s;", (gid, ))
+        return output[0][0]

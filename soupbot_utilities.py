@@ -6,6 +6,15 @@ import time
 #
 # functions
 
+# find k in cursor.execute() output
+def find_in_list(k, li):
+    for elements in li:
+        for e in elements:
+            if k == e:
+                return True
+    return False
+
+
 # creates a list of strings from a txt file
 def read_file_to_list(src):
     temp = []
