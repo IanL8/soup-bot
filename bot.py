@@ -45,7 +45,6 @@ class SoupBotClient(discord.Client):
         self.dbHandler.disconnect()
         util.soup_log(self.user.name + " has disconnected from Discord")
 
-    #
     # on guild join
     async def on_guild_join(self, guild):
         self.cmdHandlers[guild] = command_handler.CommandHandler(self.dbHandler)
