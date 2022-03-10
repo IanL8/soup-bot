@@ -71,6 +71,11 @@ class DatabaseHandler(object):
                 util.soup_log(str(inst2.args))
                 util.soup_log("[SQL] {s} query unsuccessful".format(s=queryType))
                 return 0, list()
+        except pymysql.err.IntegrityError as inst3:
+            util.soup_log("[Error] IntegrityError on {s} query".format(s=queryType))
+            util.soup_log(str(inst3.args))
+            util.soup_log("[SQL] {s} query unsuccessful".format(s=queryType))
+            return 0, list()
 
         util.soup_log("[SQL] {s} query successful".format(s=queryType))
         return 1, [c for c in self.cursor]
@@ -96,6 +101,21 @@ class DatabaseHandler(object):
                     k, output = self.make_query("INSERT INTO Users (uid, gid) VALUES (%s, %s);", (str(m.id), gid))
                     if k == 0:
                         return 0
+        return 1
+
+    def add_member(self, uid, gid):
+        #
+        # local vars
+        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
+        output = list()             # holds the output of the query in make_query()
+
+        k, output = self.make_query("SELECT uid FROM Users WHERE gid=%s", (gid, ))
+        if k == 0:
+            return 0
+        if not util.find_in_list(uid, output):
+            k, output = self.make_query("INSERT INTO Users (uid, gid) VALUES (%s, %s);", (uid, gid))
+            if k == 0:
+                return 0
         return 1
 
     def get_flag(self, gid):

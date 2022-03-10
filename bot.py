@@ -51,6 +51,11 @@ class SoupBotClient(discord.Client):
         if self.dbHandler.add_guild(guild) == 0:
             util.soup_log("[ERROR] {s} could not be added to the db".format(s=guild.name))
 
+    # on member join
+    async def on_member_join(self, member):
+        if self.dbHandler.add_member(str(member.id), str(member.guild.id)) == 0:
+            util.soup_log("[ERROR] {s}:{k} could not be added to the db".format(s=member.name, k=member.id))
+
     # on message
     async def on_message(self, message):
         if message.author == self.user:
