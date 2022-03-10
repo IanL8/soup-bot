@@ -36,7 +36,7 @@ class CommandHandler(object):
         #
         # admin access commands
         if cmd in cmds.ADMIN_COMMANDS.keys():
-            return cmds.ADMIN_COMMANDS[cmd](self, self.dbHandler, str(author.id), self.guildID, cmdArgs[0])
+            return cmds.ADMIN_COMMANDS[cmd](self, self.dbHandler, str(author.id), self.guildID, cmdArgs)
         #
         # defaults if an invalid command is passed
         else:

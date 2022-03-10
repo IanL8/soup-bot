@@ -121,13 +121,14 @@ def fortune(dbHandler, args, uid):
 # admin commands
 
 # change prefix
-def change_prefix(cmdHandler, dbHandler, uid, gid, newPrefix):
-    if len(newPrefix) < 0 or len(newPrefix) > 2:
+def change_prefix(cmdHandler, dbHandler, uid, gid, args):
+    if len(args) == 0 or len(args[0]) < 0 or len(args[0]) > 2:
         return "Bad prefix"
     #
     # local vars
     k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
     output = list()             # holds the output of the query in make_query()
+    newPrefix = args[0]
 
     k, output = dbHandler.make_query("SELECT gid FROM Guilds WHERE owner_id=%s;", (uid, ))
     if k == 0:
