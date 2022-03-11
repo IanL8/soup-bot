@@ -79,7 +79,7 @@ def git(args):
 # database cmds
 
 # fortune
-def fortune(dbHandler, args, uid):
+def fortune(args, dbHandler, uid):
     #
     # local vars
     k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
@@ -121,7 +121,7 @@ def fortune(dbHandler, args, uid):
 # admin commands
 
 # change prefix
-def change_prefix(cmdHandler, dbHandler, uid, gid, args):
+def change_prefix(args, dbHandler, cmdHandler, uid, gid):
     if len(args) == 0 or len(args[0]) < 0 or len(args[0]) > 2:
         return "Bad prefix"
     #

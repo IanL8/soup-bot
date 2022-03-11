@@ -32,11 +32,11 @@ class CommandHandler(object):
         #
         # db access commands
         if cmd in cmds.DB_ACCESS_COMMANDS.keys():
-            return cmds.DB_ACCESS_COMMANDS[cmd](self.dbHandler, cmdArgs, str(author.id))
+            return cmds.DB_ACCESS_COMMANDS[cmd](cmdArgs, self.dbHandler, str(author.id))
         #
         # admin access commands
         if cmd in cmds.ADMIN_COMMANDS.keys():
-            return cmds.ADMIN_COMMANDS[cmd](self, self.dbHandler, str(author.id), self.guildID, cmdArgs)
+            return cmds.ADMIN_COMMANDS[cmd](cmdArgs, self.dbHandler, self, str(author.id), self.guildID)
         #
         # defaults if an invalid command is passed
         else:
