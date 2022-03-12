@@ -235,7 +235,6 @@ airlines
 airplane
 airport
 airports
-aj
 aka
 alabama
 alan
@@ -857,7 +856,6 @@ belongs
 below
 belt
 belts
-ben
 bench
 benchmark
 bend
@@ -2227,7 +2225,6 @@ dates
 dating
 daughter
 daughters
-dave
 david
 davidson
 davis
@@ -4489,7 +4486,6 @@ jackets
 jackie
 jackson
 jacksonville
-jacob
 jade
 jaguar
 jail
@@ -4540,7 +4536,6 @@ job
 jobs
 joe
 joel
-john
 johnny
 johns
 johnson
@@ -4602,7 +4597,6 @@ kai
 kansas
 karaoke
 karen
-karl
 karma
 kate
 kathy
@@ -5011,7 +5005,6 @@ lucky
 lucy
 luggage
 luis
-luke
 lunch
 lung
 luther
@@ -5619,7 +5612,6 @@ niagara
 nicaragua
 nice
 nicholas
-nick
 nickel
 nickname
 nicole
@@ -7913,9 +7905,7 @@ stephen
 steps
 stereo
 sterling
-steve
 steven
-stevens
 stewart
 stick
 sticker
@@ -9261,3 +9251,17 @@ zoo
 zoom
 zoophilia
 zope
+athan
+jacob
+karl
+luke
+nick
+steve
+AJ
+ian
+yan
+timmy
+dave
+john
+ben
+khaalid
