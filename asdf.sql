@@ -31,7 +31,7 @@ CREATE TABLE MovieLists(
 );
 
 CREATE TABLE Movies(
-    name VARCHAR(200),
+    name VARCHAR(150),
     gid VARCHAR(100),
     priority INT DEFAULT 0,
     PRIMARY KEY (name, gid),
