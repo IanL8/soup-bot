@@ -126,3 +126,54 @@ class DatabaseHandler(object):
 
         k, output = self.make_query("SELECT flag FROM Guilds WHERE gid=%s;", (gid, ))
         return output[0][0]
+
+    def add_movie(self, gid, movieName):
+        #
+        # local vars
+        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
+        output = list()             # holds the output of the query in make_query()
+        k, output = self.make_query("SELECT gid FROM MovieLists;")
+        if k == 0:
+            return 0
+        if not util.find_in_list(gid, output):
+            k, output = self.make_query("INSERT INTO MovieLists (gid) VALUES (%s);", (gid, ))
+            if k == 0:
+                return 0
+        k, output = self.make_query("INSERT INTO Movies (name, gid) VALUES (%s, %s);", (movieName, gid))
+        if k == 0:
+            return 0
+        return 1
+
+    def remove_movie(self, gid, movieName):
+        #
+        # local vars
+        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
+        output = list()             # holds the output of the query in make_query()
+        k, output = self.make_query("SELECT gid FROM MovieLists;")
+        if k == 0:
+            return 0
+        if not util.find_in_list(gid, output):
+            return "No movie list"
+        k, output = self.make_query("SELECT name FROM Movies;")
+        if k == 0:
+            return 0
+        if not util.find_in_list(movieName, output):
+            return 0
+        k, output = self.make_query("DELETE FROM Movies WHERE name=%s AND gid=%s;", (movieName, gid))
+        if k == 0:
+            return 0
+        return 1
+
+    def get_movie_list(self, gid):
+        #
+        # local vars
+        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
+        output = list()             # holds the output of the query in make_query()
+        k, output = self.make_query("SELECT gid FROM MovieLists;")
+        if k == 0:
+            return 0
+        if util.find_in_list(gid, output):
+            k, output = self.make_query("SELECT name FROM Movies WHERE gid=%s;", (gid, ))
+            if k == 0:
+                return 0
+        return output
