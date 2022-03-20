@@ -79,7 +79,7 @@ def git(args):
 # database cmds
 
 # fortune
-def fortune(args, dbHandler, uid):
+def fortune(args, dbHandler, uid, gid):
     #
     # local vars
     k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
@@ -117,6 +117,38 @@ def fortune(args, dbHandler, uid):
     return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
 
 
+# add movie
+def add_movie(args, dbHandler, uid, gid):
+    if len(args) == 0:
+        return "No movie given"
+    out = dbHandler.add_movie(gid, args[0])
+    if out == 0:
+        return "Bad query"
+    return "done"
+
+
+# remove movie
+def remove_movie(args, dbHandler, uid, gid):
+    if len(args) == 0:
+        return "No movie given"
+    out = dbHandler.remove_movie(gid, args[0])
+    if out == 0:
+        return "Bad query"
+    return "done"
+
+
+# list out the movies
+def movie_list(args, dbHandler, uid, gid):
+    out = dbHandler.get_movie_list(gid)
+    if out == 0:
+        return "No list"
+    temp = "```\n"
+    for k in out:
+        temp += k[0] + "\n"
+    temp += "\n```"
+    return temp
+
+
 #
 # admin commands
 
@@ -152,7 +184,7 @@ BASIC_COMMANDS = {"help": cmd_help, "true": true_lulw, "roll": roll, "word": wor
                   "phrase": phrase, "8ball": magic_8Ball, "lookup": lookup, "which": which, "git": git}
 
 # dict of cmds that require DB access
-DB_ACCESS_COMMANDS = {"fortune": fortune}
+DB_ACCESS_COMMANDS = {"fortune": fortune, "addMovie": add_movie, "removeMovie": remove_movie, "movieList": movie_list}
 
 # dict of admin cmds
 ADMIN_COMMANDS = {"changeprefix": change_prefix}
