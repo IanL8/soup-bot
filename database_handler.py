@@ -139,7 +139,14 @@ class DatabaseHandler(object):
             k, output = self.make_query("INSERT INTO MovieLists (gid) VALUES (%s);", (gid, ))
             if k == 0:
                 return 0
-        k, output = self.make_query("INSERT INTO Movies (name, gid) VALUES (%s, %s);", (movieName, gid))
+        k, output = self.make_query("SELECT MAX(priority) FROM Movies;")
+        if k == 0:
+            return 0
+        if (None, ) in output:
+            p = 0
+        else:
+            p = output[0][0] + 1
+        k, output = self.make_query("INSERT INTO Movies (name, gid, priority) VALUES (%s, %s, %s);", (movieName, gid, p))
         if k == 0:
             return 0
         return 1
@@ -173,7 +180,7 @@ class DatabaseHandler(object):
         if k == 0:
             return 0
         if util.find_in_list(gid, output):
-            k, output = self.make_query("SELECT name FROM Movies WHERE gid=%s;", (gid, ))
+            k, output = self.make_query("SELECT name FROM Movies WHERE gid=%s ORDER BY priority;", (gid, ))
             if k == 0:
                 return 0
         return output
