@@ -32,7 +32,7 @@ class CommandHandler(object):
         #
         # db access commands
         if cmd in cmds.DB_ACCESS_COMMANDS.keys():
-            return cmds.DB_ACCESS_COMMANDS[cmd](cmdArgs, self.dbHandler, str(author.id))
+            return cmds.DB_ACCESS_COMMANDS[cmd](cmdArgs, self.dbHandler, str(author.id), str(self.guildID))
         #
         # admin access commands
         if cmd in cmds.ADMIN_COMMANDS.keys():
