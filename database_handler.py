@@ -183,4 +183,5 @@ class DatabaseHandler(object):
             k, output = self.make_query("SELECT name FROM Movies WHERE gid=%s ORDER BY priority;", (gid, ))
             if k == 0:
                 return 0
-        return output
+            return output
+        return 0
