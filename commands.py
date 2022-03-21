@@ -132,7 +132,8 @@ def add_movie(args, dbHandler, uid, gid):
 def remove_movie(args, dbHandler, uid, gid):
     if len(args) == 0:
         return "No movie given"
-    out = dbHandler.remove_movie(gid, args[0])
+    t = util.list_to_string(args)
+    out = dbHandler.remove_movie(gid, t)
     if out == 0:
         return "Bad query"
     return "done"
