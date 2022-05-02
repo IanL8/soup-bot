@@ -20,15 +20,15 @@ class CommandHandler(object):
         self.flag = f
 
     # handles commands sent by users
-    def pass_command(self, command, author):
+    def pass_command(self, context, author):
         #
         # local vars
-        cmdArgs = command.content.split(" ")
+        cmdArgs = context.content.split(" ")
         cmd = cmdArgs.pop(0)[1:]
         #
         # basic commands
         if cmd in cmds.BASIC_COMMANDS.keys():
-            return cmds.BASIC_COMMANDS[cmd](cmdArgs)
+            return cmds.BASIC_COMMANDS[cmd](cmdArgs, context)
         #
         # db access commands
         if cmd in cmds.DB_ACCESS_COMMANDS.keys():

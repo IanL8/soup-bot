@@ -16,17 +16,17 @@ import soupbot_utilities as util
 # basic cmds
 
 # help
-def cmd_help(args):
+def cmd_help(args, context):
     return "Commands: {s}".format(s=util.list_to_string(ALL_CMDS, ", "))
 
 
 # true
-def true_lulw(args):
+def true_lulw(args, context):
     return ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
 
 
 # roll <#>
-def roll(args):
+def roll(args, context):
     k = 100
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
         k = int(args[0])
@@ -34,12 +34,12 @@ def roll(args):
 
 
 # word
-def word(args=""):
+def word(args="", context=None):
     return util.WORD_LIST[int(random.random() * len(util.WORD_LIST))]
 
 
 # phrase <#>
-def phrase(args):
+def phrase(args, context):
     k = 2
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
         k = int(args[0])
@@ -50,19 +50,21 @@ def phrase(args):
 
 
 # 8ball
-def magic_8Ball(args):
+def magic_8Ball(args, context):
+    if context.author.id == 295323286244687872:
+        return util.MAGIC_8BALL_LIST[int(random.random() * 10)]
     return util.MAGIC_8BALL_LIST[int(random.random() * len(util.MAGIC_8BALL_LIST))]
 
 
 # lookup <name>
-def lookup(args):
+def lookup(args, context):
     if len(args) == 0:
         return "No name specified."
     return "https://na.op.gg/summoner/userName=" + args[0]
 
 
 # which <options>
-def which(args):
+def which(args, context):
     tempList = [s.strip() for s in util.list_to_string(args).split(",")]
     while "" in tempList:
         tempList.remove("")
@@ -71,7 +73,7 @@ def which(args):
     return tempList[int(random.random() * len(tempList))]
 
 
-def git(args):
+def git(args, context):
     return "https://github.com/IanL8/soup-bot"
 
 
