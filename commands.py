@@ -5,28 +5,33 @@ import time
 
 #
 # project imports
+from dec_cmd_handler import CmdHandler
+import database_handler as db
 import soupbot_utilities as util
 
-
 #
-# helper functions
-
+# globals
+cmdHandler = CmdHandler()
 
 #
 # basic cmds
 
+
 # help
-def cmd_help(args, context):
-    return "Commands: {s}".format(s=util.list_to_string(ALL_CMDS, ", "))
+@cmdHandler.name("help")
+def cmd_help(context, args):
+    return "Commands: {s}".format(s=util.list_to_string(cmdHandler.list_all_cmds(), ", "))
 
 
 # true
-def true_lulw(args, context):
+@cmdHandler.name("true")
+def true_lulw(context, args):
     return ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
 
 
 # roll <#>
-def roll(args, context):
+@cmdHandler.name("roll")
+def roll(context, args):
     k = 100
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
         k = int(args[0])
@@ -34,12 +39,14 @@ def roll(args, context):
 
 
 # word
-def word(args="", context=None):
+@cmdHandler.name("word")
+def word(context=None, args=""):
     return util.WORD_LIST[int(random.random() * len(util.WORD_LIST))]
 
 
 # phrase <#>
-def phrase(args, context):
+@cmdHandler.name("phrase")
+def phrase(context, args):
     k = 2
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
         k = int(args[0])
@@ -50,21 +57,24 @@ def phrase(args, context):
 
 
 # 8ball
-def magic_8Ball(args, context):
+@cmdHandler.name("8ball")
+def magic_8Ball(context, args):
     if context.author.id == 295323286244687872:
         return util.MAGIC_8BALL_LIST[int(random.random() * 10)]
     return util.MAGIC_8BALL_LIST[int(random.random() * len(util.MAGIC_8BALL_LIST))]
 
 
 # lookup <name>
-def lookup(args, context):
+@cmdHandler.name("lookup")
+def lookup(context, args):
     if len(args) == 0:
         return "No name specified."
     return "https://na.op.gg/summoner/userName=" + args[0]
 
 
 # which <options>
-def which(args, context):
+@cmdHandler.name("which")
+def which(context, args):
     tempList = [s.strip() for s in util.list_to_string(args).split(",")]
     while "" in tempList:
         tempList.remove("")
@@ -73,7 +83,8 @@ def which(args, context):
     return tempList[int(random.random() * len(tempList))]
 
 
-def git(args, context):
+@cmdHandler.name("git")
+def git(context, args):
     return "https://github.com/IanL8/soup-bot"
 
 
@@ -81,30 +92,28 @@ def git(args, context):
 # database cmds
 
 # fortune
-def fortune(args, dbHandler, uid, gid):
-    #
-    # local vars
-    k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
-    output = list()             # holds the output of the query in make_query()
-    lastUsage = 0               # holds the time of the last usage of the cmd
+@cmdHandler.name("fortune")
+def fortune(context, args):
+    uid = context.author.id
+    gid = context.guild.id
+    lastUsage = 0
 
     # check if userId is already in the table
-    k, output = dbHandler.make_query("SELECT tid FROM UserTimers WHERE uid=%s;", (uid,))
-    if k == 0:
+    k = db.request("SELECT tid FROM UserTimers WHERE uid=?;", (uid,))
+    if k == -1:
         return "[Error] Bad query"
 
     # if not, add them to the table
-    if not util.find_in_list("fortune", output):
-        k, output = dbHandler.make_query("INSERT INTO UserTimers (tid, uid) VALUES (%s, %s);",
-                                         ("fortune", uid))
-        if k == 0:
+    if not util.find_in_list("fortune", k):
+        k = db.request("INSERT INTO UserTimers (tid, uid) VALUES (?, ?);", ("fortune", uid))
+        if k == -1:
             return "[Error] Bad query"
     # if they are, fetch the last time fortune was used
     else:
-        k, output = dbHandler.make_query("SELECT start_time FROM UserTimers WHERE uid=%s;", (uid,))
-        if k == 0:
+        k = db.request("SELECT start_time FROM UserTimers WHERE uid=?;", (uid,))
+        if k == -1:
             return "[Error] Bad query"
-        lastUsage = output[0][0]
+        lastUsage = k[0][0]
 
     # if it has not been 20 hrs, return the time remaining to the next use
     t = time.time() - lastUsage
@@ -112,43 +121,47 @@ def fortune(args, dbHandler, uid, gid):
         return util.time_remaining_to_string(72000 - t) + " until next fortune redeem."
 
     # update the table with the current time and return the fortune
-    k, output = dbHandler.make_query("UPDATE UserTimers SET start_time=%s WHERE uid=%s;",
-                                     (int(time.time()), uid))
-    if k == 0:
+    k = db.request("UPDATE UserTimers SET start_time=? WHERE uid=?;", (int(time.time()), uid))
+    if k == -1:
         return "[Error] Bad query"
     return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
 
 
 # add movie
-def add_movie(args, dbHandler, uid, gid):
+@cmdHandler.name("addmovie")
+def add_movie(context, args):
+    gid = context.guild.id
+
     if len(args) == 0:
         return "No movie given"
     t = util.list_to_string(args)
-    out = dbHandler.add_movie(gid, t)
-    if out == 0:
+    if not db.add_movie(gid, t):
         return "Bad query"
     return "done"
 
 
 # remove movie
-def remove_movie(args, dbHandler, uid, gid):
+@cmdHandler.name("removemovie")
+def remove_movie(context, args):
+    gid = context.guild.id
+
     if len(args) == 0:
         return "No movie given"
     t = util.list_to_string(args)
-    out = dbHandler.remove_movie(gid, t)
-    if out == 0:
+    if not db.remove_movie(gid, t):
         return "Bad query"
     return "done"
 
 
 # list out the movies
-def movie_list(args, dbHandler, uid, gid):
-    out = dbHandler.get_movie_list(gid)
-    if out == 0:
-        return "No list"
+@cmdHandler.name("listmovies")
+def movie_list(context, args):
+    gid = context.guild.id
+
+    li = db.get_movie_list(gid)
     temp = "```\n"
-    for k in out:
-        temp += k[0] + "\n"
+    for i in li:
+        temp += i[0] + "\n"
     temp += "\n```"
     return temp
 
@@ -157,49 +170,31 @@ def movie_list(args, dbHandler, uid, gid):
 # admin commands
 
 # change prefix
-def change_prefix(args, dbHandler, cmdHandler, uid, gid):
+@cmdHandler.name("changeprefix")
+def change_prefix(context, args):
     if len(args) == 0 or len(args[0]) < 0 or len(args[0]) > 2:
         return "Bad prefix"
-    #
-    # local vars
-    k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
-    output = list()             # holds the output of the query in make_query()
+
+    uid = context.author.id
+    gid = context.guild.id
+
     newPrefix = args[0]
 
-    k, output = dbHandler.make_query("SELECT gid FROM Guilds WHERE owner_id=%s;", (uid, ))
-    if k == 0:
+    k = db.request("SELECT gid FROM Guilds WHERE owner_id=?;", (uid,))
+    if k == -1:
         return "[Error] Bad query"
 
-    if util.find_in_list(gid, output):
-        k, output = dbHandler.make_query("UPDATE Guilds SET flag=%s WHERE gid=%s;", (newPrefix, gid))
-        if k == 0:
+    if util.find_in_list(gid, k):
+        k = db.request("UPDATE Guilds SET flag=? WHERE gid=?;", (newPrefix, gid))
+        if k == -1:
             return "[Error] Bad query"
-        cmdHandler.set_flag(newPrefix)
         return "Change successful"
 
     return "You do not have the permissions for this command"
 
 
 #
-# dictionaries
+# get cmdHandler object
+def get_cmd_handler():
+    return cmdHandler
 
-# dict of basic cmds
-BASIC_COMMANDS = {"help": cmd_help, "true": true_lulw, "roll": roll, "word": word,
-                  "phrase": phrase, "8ball": magic_8Ball, "lookup": lookup, "which": which, "git": git}
-
-# dict of cmds that require DB access
-DB_ACCESS_COMMANDS = {"fortune": fortune, "addMovie": add_movie, "removeMovie": remove_movie, "movieList": movie_list}
-
-# dict of admin cmds
-ADMIN_COMMANDS = {"changeprefix": change_prefix}
-
-
-# list of all cmds
-def make_cmd_list():
-    temp = list(BASIC_COMMANDS.keys())
-    temp += list(DB_ACCESS_COMMANDS.keys())
-    temp += list(ADMIN_COMMANDS.keys())
-    return temp
-
-
-ALL_CMDS = make_cmd_list()

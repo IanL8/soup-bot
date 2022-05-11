@@ -1,187 +1,185 @@
 #
 # imports
-import pymysql
+import sqlite3 as sql
 
 #
 # project imports
 import soupbot_utilities as util
 
 
+# create tables
+def init() -> bool:
+    conn = sql.connect("database.db")
+
+    k = query(conn, "CREATE TABLE IF NOT EXISTS Guilds("
+                    "gid INTEGER NOT NULL, "
+                    "flag VARCHAR(10) DEFAULT '!', "
+                    "general_chat INTEGER, "
+                    "owner_id INTEGER NOT NULL, "
+                    "PRIMARY KEY (gid) "
+                    ");")
+    if k == -1:
+        return False
+
+    k = query(conn, "CREATE TABLE IF NOT EXISTS Users("
+                    "uid INTEGER NOT NULL, "
+                    "gid INTEGER NOT NULL, "
+                    "FOREIGN KEY(gid) REFERENCES Guilds(gid) ON DELETE CASCADE, "
+                    "PRIMARY KEY (uid, gid) "
+                    ");")
+    if k == -1:
+        return False
+
+    k = query(conn, "CREATE TABLE IF NOT EXISTS UserTimers("
+                    "tid VARCHAR(100) NOT NULL, "
+                    "uid INTEGER NOT NULL, "
+                    "start_time INT DEFAULT 0, "
+                    "FOREIGN KEY(uid) REFERENCES Users(uid) ON DELETE CASCADE, "
+                    "PRIMARY KEY (tid, uid) "
+                    ");")
+    if k == -1:
+        return False
+
+    k = query(conn, "CREATE TABLE IF NOT EXISTS Movies( "
+                    "name VARCHAR(150), "
+                    "gid INTEGER, "
+                    "priority INTEGER DEFAULT 0, "
+                    "PRIMARY KEY (name, gid), "
+                    "FOREIGN KEY (gid) REFERENCES Guilds(gid) ON DELETE CASCADE "
+                    ");")
+
+    if k == -1:
+        return False
+
+    conn.commit()
+    return True
+
+
 #
-# database handler
-class DatabaseHandler(object):
+# queries
 
-    # init
-    def __init__(self, u, p, h, d):
-        self.user, self.password, self.host, self.db = u, p, h, d
-        self.cursor, self.conn = None, None
-        self.connected = False
+def request(q, values=tuple()):
+    conn = sql.connect("database.db")
 
-    # makes the connection to the mysql database
-    def connect(self):
-        util.soup_log("Trying to connect to mysql...")
-        if not self.connected:
-            self.conn = pymysql.connect(user=self.user, password=self.password, host=self.host, database=self.db)
-            self.conn.autocommit(True)
-            self.cursor = self.conn.cursor()
-            self.connected = True
-            util.soup_log("Connection successful")
+    k = query(conn, q, values)
+    if k == -1:
+        return k
+
+    conn.commit()
+    return k
+
+
+# makes a query using the SQL query and its corresponding values
+# returns either (1, query result) if successful, or (0, empty list) if unsuccessful
+def query(conn, q, values=tuple()):
+    k = -1
+    queryType = q.split(" ")[0]
+    try:
+        if not values:
+            k = conn.execute(q).fetchall()
         else:
-            util.soup_log("[Error] Already connected")
+            k = conn.execute(q, values).fetchall()
+    except sql.OperationalError as e1:
+        util.soup_log("[Error] OperationError on {s} query".format(s=queryType))
+        util.soup_log(str(e1.args))
+    except sql.IntegrityError as e2:
+        util.soup_log("[Error] IntegrityError on {s} query".format(s=queryType))
+        util.soup_log(str(e2.args))
+    except sql.Error as e3:
+        util.soup_log("[Error] Unknown SQL error on {s} query".format(s=queryType))
+        util.soup_log(str(e3.args))
+    finally:
+        return k
 
-    # disconnects from the mysql database
-    def disconnect(self):
-        util.soup_log("Trying to disconnect from mysql...")
-        if self.connected:
-            self.cursor.close()
-            self.conn.close()
-            self.connected = False
-            util.soup_log("Disconnection successful")
-        else:
-            util.soup_log("[Error] Not connected")
 
-    # makes a query using the SQL query and its corresponding values
-    # returns either (1, query result) if successful, or (0, empty list) if unsuccessful
-    def make_query(self, query, values=tuple()):
-        queryType = query.split(" ")[0]
-        #
-        # attempt query
-        try:
-            if len(values) > 0:
-                self.cursor.execute(query, values)
-            else:
-                self.cursor.execute(query)
-        except pymysql.err.OperationalError as inst1:
-            util.soup_log("[Error] OperationError on {s} query".format(s=queryType))
-            util.soup_log(str(inst1.args))
-            util.soup_log("Restarting connection...")
-            self.disconnect()
-            self.connect()
-            util.soup_log("Restart successful")
-            #
-            # attempt query again
-            util.soup_log("[SQL] Reattempting {s} query...".format(s=queryType))
-            try:
-                if len(values) > 0:
-                    self.cursor.execute(query, values)
-                else:
-                    self.cursor.execute(query)
-            except pymysql.err.OperationalError as inst2:
-                util.soup_log("[Error] OperationError on {s} query".format(s=queryType))
-                util.soup_log(str(inst2.args))
-                util.soup_log("[SQL] {s} query unsuccessful".format(s=queryType))
-                return 0, list()
-        except pymysql.err.IntegrityError as inst3:
-            util.soup_log("[Error] IntegrityError on {s} query".format(s=queryType))
-            util.soup_log(str(inst3.args))
-            util.soup_log("[SQL] {s} query unsuccessful".format(s=queryType))
-            return 0, list()
+def add_guild(guild) -> bool:
+    gid = guild.id
+    conn = sql.connect("database.db")
 
-        util.soup_log("[SQL] {s} query successful".format(s=queryType))
-        return 1, [c for c in self.cursor]
+    k = query(conn, "SELECT gid FROM Guilds;")
+    if k == -1:
+        return False
+    if not util.find_in_list(gid, k):
+        k = query(conn, "INSERT INTO Guilds (gid, general_chat, owner_id) VALUES (?, ?, ?);",
+                  (gid, guild.text_channels[0].id, guild.owner_id))
+        if k == -1:
+            return False
+        for m in guild.members:
+            if not m.bot:
+                query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (m.id, gid))
 
-    def add_guild(self, guild):
-        #
-        # local vars
-        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
-        output = list()             # holds the output of the query in make_query()
-        gid = str(guild.id)         # holds the guild's ID
+    conn.commit()
+    return True
 
-        k, output = self.make_query("SELECT gid FROM Guilds;")
-        if k == 0:
-            return 0
 
-        if not util.find_in_list(gid, output):
-            k, output = self.make_query("INSERT INTO Guilds (gid, general_chat, owner_id) VALUES (%s, %s, %s);",
-                                        (gid, str(guild.text_channels[0].id), str(guild.owner_id)))
-            if k == 0:
-                return 0
-            for m in guild.members:
-                if not m.bot:
-                    k, output = self.make_query("INSERT INTO Users (uid, gid) VALUES (%s, %s);", (str(m.id), gid))
-                    if k == 0:
-                        return 0
-        return 1
+def add_member(uid, gid) -> bool:
+    conn = sql.connect("database.db")
 
-    def add_member(self, uid, gid):
-        #
-        # local vars
-        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
-        output = list()             # holds the output of the query in make_query()
+    k = query(conn, "SELECT uid FROM Users WHERE gid=?", (gid,))
+    if k == -1:
+        return False
+    if not util.find_in_list(uid, k):
+        k = query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (uid, gid))
+        if k == -1:
+            return False
 
-        k, output = self.make_query("SELECT uid FROM Users WHERE gid=%s", (gid, ))
-        if k == 0:
-            return 0
-        if not util.find_in_list(uid, output):
-            k, output = self.make_query("INSERT INTO Users (uid, gid) VALUES (%s, %s);", (uid, gid))
-            if k == 0:
-                return 0
-        return 1
+    conn.commit()
+    return True
 
-    def get_flag(self, gid):
-        #
-        # local vars
-        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
-        output = list()             # holds the output of the query in make_query()
 
-        k, output = self.make_query("SELECT flag FROM Guilds WHERE gid=%s;", (gid, ))
-        return output[0][0]
+def get_flag(gid) -> str:
+    conn = sql.connect("database.db")
 
-    def add_movie(self, gid, movieName):
-        #
-        # local vars
-        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
-        output = list()             # holds the output of the query in make_query()
-        k, output = self.make_query("SELECT gid FROM MovieLists;")
-        if k == 0:
-            return 0
-        if not util.find_in_list(gid, output):
-            k, output = self.make_query("INSERT INTO MovieLists (gid) VALUES (%s);", (gid, ))
-            if k == 0:
-                return 0
-        k, output = self.make_query("SELECT MAX(priority) FROM Movies;")
-        if k == 0:
-            return 0
-        if (None, ) in output:
-            p = 0
-        else:
-            p = output[0][0] + 1
-        k, output = self.make_query("INSERT INTO Movies (name, gid, priority) VALUES (%s, %s, %s);", (movieName, gid, p))
-        if k == 0:
-            return 0
-        return 1
+    k = query(conn, "SELECT flag FROM Guilds WHERE gid=?;", (gid,))
+    if k == -1:
+        return "!"  # default
 
-    def remove_movie(self, gid, movieName):
-        #
-        # local vars
-        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
-        output = list()             # holds the output of the query in make_query()
-        k, output = self.make_query("SELECT gid FROM MovieLists;")
-        if k == 0:
-            return 0
-        if not util.find_in_list(gid, output):
-            return "No movie list"
-        k, output = self.make_query("SELECT name FROM Movies;")
-        if k == 0:
-            return 0
-        if not util.find_in_list(movieName, output):
-            return 0
-        k, output = self.make_query("DELETE FROM Movies WHERE name=%s AND gid=%s;", (movieName, gid))
-        if k == 0:
-            return 0
-        return 1
+    return k[0][0]
 
-    def get_movie_list(self, gid):
-        #
-        # local vars
-        k = 0                       # holds 1 or 0 depending on whether make_query() was a success or a failure
-        output = list()             # holds the output of the query in make_query()
-        k, output = self.make_query("SELECT gid FROM MovieLists;")
-        if k == 0:
-            return 0
-        if util.find_in_list(gid, output):
-            k, output = self.make_query("SELECT name FROM Movies WHERE gid=%s ORDER BY priority;", (gid, ))
-            if k == 0:
-                return 0
-            return output
-        return 0
+
+def add_movie(gid, movieName) -> bool:
+    conn = sql.connect("database.db")
+
+    k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))
+    if k == -1 or util.find_in_list(movieName, k):
+        return False
+    k = query(conn, "SELECT MAX(priority) FROM Movies WHERE gid=?;", (gid, ))
+    if k == -1:
+        return False
+    p = 0 if (None, ) in k else k[0][0] + 1  # need to improve the readability of this
+    k = query(conn, "INSERT INTO Movies (name, gid, priority) VALUES (?, ?, ?);", (movieName, gid, p))
+    if k == -1:
+        return False
+
+    conn.commit()
+    return True
+
+
+def remove_movie(gid, movieName) -> bool:
+    conn = sql.connect("database.db")
+
+    k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))  # should improve this
+    if k == -1 or not util.find_in_list(movieName, k):
+        return False
+    k = query(conn, "DELETE FROM Movies WHERE name=? AND gid=?;", (movieName, gid))
+    if k == -1:
+        return False
+
+    conn.commit()
+    return True
+
+
+def get_movie_list(gid) -> list:
+    conn = sql.connect("database.db")
+
+    k = query(conn, "SELECT gid FROM Movies;")
+    if k == -1:
+        return []
+    if not util.find_in_list(gid, k):
+        return []
+    k = query(conn, "SELECT name FROM Movies WHERE gid=? ORDER BY priority;", (gid,))
+    if k == -1:
+        return []
+
+    conn.commit()
+    return k
