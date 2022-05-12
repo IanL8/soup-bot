@@ -82,6 +82,7 @@ def which(context, args):
     return tempList[int(random.random() * len(tempList))]
 
 
+# git
 @commandHandler.name("git")
 def git(context, args):
     return "https://github.com/IanL8/soup-bot"
@@ -107,7 +108,7 @@ def add_movie(context, args):
         return "No movie given"
     t = util.list_to_string(args)
     if not db.add_movie(gid, t):
-        return "Bad query"
+        return "error"
     return "done"
 
 
@@ -120,7 +121,7 @@ def remove_movie(context, args):
         return "No movie given"
     t = util.list_to_string(args)
     if not db.remove_movie(gid, t):
-        return "Bad query"
+        return "error"
     return "done"
 
 
@@ -142,26 +143,15 @@ def movie_list(context, args):
 
 # change prefix
 @commandHandler.name("changeprefix")
-def change_prefix(context, args):
+def set_flag(context, args):
     if len(args) == 0 or len(args[0]) < 0 or len(args[0]) > 2:
         return "Bad prefix"
 
     uid = context.author.id
     gid = context.guild.id
 
-    newPrefix = args[0]
-
-    k = db.request("SELECT gid FROM Guilds WHERE owner_id=?;", (uid,))
-    if k == -1:
-        return "[Error] Bad query"
-
-    if util.find_in_list(gid, k):
-        k = db.request("UPDATE Guilds SET flag=? WHERE gid=?;", (newPrefix, gid))
-        if k == -1:
-            return "[Error] Bad query"
-        return "Change successful"
-
-    return "You do not have the permissions for this command"
+    newFlag = args[0]
+    return db.set_flag(uid, gid, newFlag)
 
 
 #

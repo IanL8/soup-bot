@@ -1,4 +1,10 @@
+#
+# project imports
+import soupbot_utilities as util
 
+
+#
+# command handler
 class CommandHandler:
 
     def __init__(self):
@@ -16,7 +22,13 @@ class CommandHandler:
     def name(self, name: str):
 
         def decorator(f: callable):
-            self.cmds[name] = f
-            return f
+
+            def wrapper(context, args):
+                util.soup_log("[CMD] {} on {}".format(name, args))
+                return f(context, args)
+
+            self.cmds[name] = wrapper
+
+            return wrapper
 
         return decorator

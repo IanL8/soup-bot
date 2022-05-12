@@ -15,11 +15,9 @@ class SoupBotClient(discord.Client):
     # init
     def __init__(self, **options):
         super().__init__(**options)
-        #
         # init tables
         db.init()
-        #
-        # init cmd_handler
+        # get cmd_handler
         self.cmdHandler = commands.get_command_handler()
 
     # on connection to discord
@@ -41,7 +39,7 @@ class SoupBotClient(discord.Client):
     # on member join
     async def on_member_join(self, member):
         if not db.add_member(member.id, member.guild.id):
-            util.soup_log("[ERROR] {s}:{k} could not be added to the db".format(s=member.name, k=member.id))
+            util.soup_log("[ERROR] {m}:{i} could not be added to the db".format(m=member.name, i=member.id))
 
     # on message
     async def on_message(self, message):
@@ -49,9 +47,10 @@ class SoupBotClient(discord.Client):
             return
 
         flag = message.content[0]
-        args = message.content.split(" ")
-        cmd = args.pop(0)[1:]
 
-        if db.get_flag(message.guild.id) == flag and self.cmdHandler.is_command(cmd):
-            temp = self.cmdHandler.pass_command(cmd, message, args)
-            await message.channel.send(temp)
+        if db.get_flag(message.guild.id) == flag:
+            args = message.content.split(" ")
+            cmd = args.pop(0)[1:]
+            if self.cmdHandler.is_command(cmd):
+                temp = self.cmdHandler.pass_command(cmd, message, args)
+                await message.channel.send(temp)

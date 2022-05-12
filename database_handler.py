@@ -8,6 +8,10 @@ import time
 # project imports
 import soupbot_utilities as util
 
+#
+# globals
+flags = dict()
+
 
 # create tables
 def init() -> bool:
@@ -49,7 +53,6 @@ def init() -> bool:
                     "PRIMARY KEY (name, gid), "
                     "FOREIGN KEY (gid) REFERENCES Guilds(gid) ON DELETE CASCADE "
                     ");")
-
     if k == -1:
         return False
 
@@ -60,6 +63,8 @@ def init() -> bool:
 #
 # queries
 
+# for db queries outside the scope of database_handler
+# creates a connection and commits the transaction
 def request(q, values=tuple()):
     conn = sql.connect("database.db")
 
@@ -71,8 +76,7 @@ def request(q, values=tuple()):
     return k
 
 
-# makes a query using the SQL query and its corresponding values
-# returns either (1, query result) if successful, or (0, empty list) if unsuccessful
+# makes a query using the connection, SQL query, and its corresponding values
 def query(conn, q, values=tuple()):
     k = -1
     queryType = q.split(" ")[0]
@@ -81,7 +85,7 @@ def query(conn, q, values=tuple()):
             k = conn.execute(q).fetchall()
         else:
             k = conn.execute(q, values).fetchall()
-        util.soup_log("[SQL] {q} query on {v} values".format(q=queryType, v=(values if values else "no")))
+        util.soup_log("[SQL] {q} query on {v}".format(q=queryType, v=values))
     except sql.OperationalError as e1:
         util.soup_log("[Error] OperationError on {s} query".format(s=queryType))
         util.soup_log("Query values: {s}".format(s=values))
@@ -98,18 +102,25 @@ def query(conn, q, values=tuple()):
         return k
 
 
-def add_guild(guild) -> bool:
-    gid = guild.id
-    conn = sql.connect("database.db")
+#
+# guilds
 
+# returns true if a guild is added or if the guild is already in the db
+def add_guild(guild) -> bool:
+    conn = sql.connect("database.db")
+    gid = guild.id
+
+    # if not already in Guilds
     k = query(conn, "SELECT gid FROM Guilds;")
     if k == -1:
         return False
     if not util.find_in_list(gid, k):
+        # insert guild
         k = query(conn, "INSERT INTO Guilds (gid, general_chat, owner_id) VALUES (?, ?, ?);",
                   (gid, guild.text_channels[0].id, guild.owner_id))
         if k == -1:
             return False
+        # insert guild members
         for m in guild.members:
             if not m.bot:
                 query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (m.id, gid))
@@ -118,13 +129,16 @@ def add_guild(guild) -> bool:
     return True
 
 
+# returns true if a member is added or if the member is already in the db
 def add_member(uid, gid) -> bool:
     conn = sql.connect("database.db")
 
+    # if member is not in guild
     k = query(conn, "SELECT uid FROM Users WHERE gid=?", (gid,))
     if k == -1:
         return False
     if not util.find_in_list(uid, k):
+        # insert member
         k = query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (uid, gid))
         if k == -1:
             return False
@@ -133,43 +147,77 @@ def add_member(uid, gid) -> bool:
     return True
 
 
+#
+# flags
+
 def get_flag(gid) -> str:
     conn = sql.connect("database.db")
 
+    # fetch flag from cache if possible
+    if gid in flags.keys():
+        return flags[gid]
+
+    # fetch from db
     k = query(conn, "SELECT flag FROM Guilds WHERE gid=?;", (gid,))
     if k == -1:
         return "!"  # default
 
+    # add to cache
+    flags[gid] = k[0][0]
+
     return k[0][0]
 
+
+def set_flag(uid, gid, newFlag) -> str:
+    conn = sql.connect("database.db")
+
+    # if member is not the guild owner
+    k = query(conn, "SELECT gid FROM Guilds WHERE owner_id=?;", (uid,))
+    if k == -1:
+        return "[Error] Bad query"
+    if not util.find_in_list(gid, k):
+        return "You do not have the permissions for this command"
+
+    # update flag
+    k = query(conn, "UPDATE Guilds SET flag=? WHERE gid=?;", (newFlag, gid))
+    if k == -1:
+        return "[Error] Bad query"
+
+    # commit transaction and update cache
+    conn.commit()
+    flags[gid] = newFlag
+    return "Change successful"
+
+
+#
+# commands
 
 def get_fortune(uid) -> str:
     conn = sql.connect("database.db")
     lastUsage = 0
 
-    # check if userId is already in the table
+    # if member is not already in UserTimers
     k = query(conn, "SELECT tid FROM UserTimers WHERE uid=?;", (uid,))
     if k == -1:
         return "[Error] Bad query"
-
-    # if not, add them to the table
     if not util.find_in_list("fortune", k):
+        # insert member
         k = query(conn, "INSERT INTO UserTimers (tid, uid) VALUES (?, ?);", ("fortune", uid))
         if k == -1:
             return "[Error] Bad query"
-    # if they are, fetch the last time fortune was used
+    # else, fetch the last usage of fortune
     else:
         k = query(conn, "SELECT start_time FROM UserTimers WHERE uid=?;", (uid,))
         if k == -1:
             return "[Error] Bad query"
         lastUsage = k[0][0]
 
-    # if it has not been 20 hrs, return the time remaining to the next use
+    # if it has not been 20 hrs since the last use
     t = time.time() - lastUsage
     if t < 72000:
         return util.time_remaining_to_string(72000 - t) + " until next fortune redeem."
 
-    # update the table with the current time and return the fortune
+    # else, update the table with the current time and return the fortune
     k = query(conn, "UPDATE UserTimers SET start_time=? WHERE uid=?;", (int(time.time()), uid))
     if k == -1:
         return "[Error] Bad query"
@@ -181,13 +229,18 @@ def get_fortune(uid) -> str:
 def add_movie(gid, movieName) -> bool:
     conn = sql.connect("database.db")
 
+    # if movie is already in Movies
     k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))
     if k == -1 or util.find_in_list(movieName, k):
         return False
+
+    # get next highest priority
     k = query(conn, "SELECT MAX(priority) FROM Movies WHERE gid=?;", (gid, ))
     if k == -1:
         return False
     p = 0 if (None, ) in k else k[0][0] + 1  # need to improve the readability of this
+
+    # insert new movie into Movies
     k = query(conn, "INSERT INTO Movies (name, gid, priority) VALUES (?, ?, ?);", (movieName, gid, p))
     if k == -1:
         return False
@@ -199,9 +252,12 @@ def add_movie(gid, movieName) -> bool:
 def remove_movie(gid, movieName) -> bool:
     conn = sql.connect("database.db")
 
+    # if movie not in Movies
     k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))  # should improve this
     if k == -1 or not util.find_in_list(movieName, k):
         return False
+
+    # remove movie from Movies
     k = query(conn, "DELETE FROM Movies WHERE name=? AND gid=?;", (movieName, gid))
     if k == -1:
         return False
@@ -213,11 +269,7 @@ def remove_movie(gid, movieName) -> bool:
 def get_movie_list(gid) -> list:
     conn = sql.connect("database.db")
 
-    k = query(conn, "SELECT gid FROM Movies;")
-    if k == -1:
-        return []
-    if not util.find_in_list(gid, k):
-        return []
+    # get the movies for guild gid
     k = query(conn, "SELECT name FROM Movies WHERE gid=? ORDER BY priority;", (gid,))
     if k == -1:
         return []
