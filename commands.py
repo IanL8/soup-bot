@@ -12,9 +12,9 @@ import soupbot_utilities as util
 # globals
 commandHandler = CommandHandler()
 
+
 #
 # basic cmds
-
 
 # help
 @commandHandler.command("help")
@@ -51,7 +51,7 @@ def phrase(context, args):
         k = int(args[0])
     temp = []
     for i in range(k):
-        temp.insert(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
+        temp.append(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
     return util.list_to_string(temp, " ")
 
 
