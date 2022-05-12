@@ -1,36 +1,35 @@
 #
 # imports
 import random
-import time
 
 #
 # project imports
-from dec_cmd_handler import CmdHandler
+from command_handler import CommandHandler
 import database_handler as db
 import soupbot_utilities as util
 
 #
 # globals
-cmdHandler = CmdHandler()
+commandHandler = CommandHandler()
 
 #
 # basic cmds
 
 
 # help
-@cmdHandler.name("help")
+@commandHandler.name("help")
 def cmd_help(context, args):
-    return "Commands: {s}".format(s=util.list_to_string(cmdHandler.list_all_cmds(), ", "))
+    return "Commands: {s}".format(s=util.list_to_string(commandHandler.list_commands(), ", "))
 
 
 # true
-@cmdHandler.name("true")
+@commandHandler.name("true")
 def true_lulw(context, args):
     return ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
 
 
 # roll <#>
-@cmdHandler.name("roll")
+@commandHandler.name("roll")
 def roll(context, args):
     k = 100
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
@@ -39,13 +38,13 @@ def roll(context, args):
 
 
 # word
-@cmdHandler.name("word")
+@commandHandler.name("word")
 def word(context=None, args=""):
     return util.WORD_LIST[int(random.random() * len(util.WORD_LIST))]
 
 
 # phrase <#>
-@cmdHandler.name("phrase")
+@commandHandler.name("phrase")
 def phrase(context, args):
     k = 2
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
@@ -57,7 +56,7 @@ def phrase(context, args):
 
 
 # 8ball
-@cmdHandler.name("8ball")
+@commandHandler.name("8ball")
 def magic_8Ball(context, args):
     if context.author.id == 295323286244687872:
         return util.MAGIC_8BALL_LIST[int(random.random() * 10)]
@@ -65,7 +64,7 @@ def magic_8Ball(context, args):
 
 
 # lookup <name>
-@cmdHandler.name("lookup")
+@commandHandler.name("lookup")
 def lookup(context, args):
     if len(args) == 0:
         return "No name specified."
@@ -73,7 +72,7 @@ def lookup(context, args):
 
 
 # which <options>
-@cmdHandler.name("which")
+@commandHandler.name("which")
 def which(context, args):
     tempList = [s.strip() for s in util.list_to_string(args).split(",")]
     while "" in tempList:
@@ -83,7 +82,7 @@ def which(context, args):
     return tempList[int(random.random() * len(tempList))]
 
 
-@cmdHandler.name("git")
+@commandHandler.name("git")
 def git(context, args):
     return "https://github.com/IanL8/soup-bot"
 
@@ -92,43 +91,15 @@ def git(context, args):
 # database cmds
 
 # fortune
-@cmdHandler.name("fortune")
+@commandHandler.name("fortune")
 def fortune(context, args):
     uid = context.author.id
-    gid = context.guild.id
-    lastUsage = 0
 
-    # check if userId is already in the table
-    k = db.request("SELECT tid FROM UserTimers WHERE uid=?;", (uid,))
-    if k == -1:
-        return "[Error] Bad query"
-
-    # if not, add them to the table
-    if not util.find_in_list("fortune", k):
-        k = db.request("INSERT INTO UserTimers (tid, uid) VALUES (?, ?);", ("fortune", uid))
-        if k == -1:
-            return "[Error] Bad query"
-    # if they are, fetch the last time fortune was used
-    else:
-        k = db.request("SELECT start_time FROM UserTimers WHERE uid=?;", (uid,))
-        if k == -1:
-            return "[Error] Bad query"
-        lastUsage = k[0][0]
-
-    # if it has not been 20 hrs, return the time remaining to the next use
-    t = time.time() - lastUsage
-    if t < 72000:
-        return util.time_remaining_to_string(72000 - t) + " until next fortune redeem."
-
-    # update the table with the current time and return the fortune
-    k = db.request("UPDATE UserTimers SET start_time=? WHERE uid=?;", (int(time.time()), uid))
-    if k == -1:
-        return "[Error] Bad query"
-    return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
+    return db.get_fortune(uid)
 
 
 # add movie
-@cmdHandler.name("addmovie")
+@commandHandler.name("addmovie")
 def add_movie(context, args):
     gid = context.guild.id
 
@@ -141,7 +112,7 @@ def add_movie(context, args):
 
 
 # remove movie
-@cmdHandler.name("removemovie")
+@commandHandler.name("removemovie")
 def remove_movie(context, args):
     gid = context.guild.id
 
@@ -154,7 +125,7 @@ def remove_movie(context, args):
 
 
 # list out the movies
-@cmdHandler.name("listmovies")
+@commandHandler.name("listmovies")
 def movie_list(context, args):
     gid = context.guild.id
 
@@ -170,7 +141,7 @@ def movie_list(context, args):
 # admin commands
 
 # change prefix
-@cmdHandler.name("changeprefix")
+@commandHandler.name("changeprefix")
 def change_prefix(context, args):
     if len(args) == 0 or len(args[0]) < 0 or len(args[0]) > 2:
         return "Bad prefix"
@@ -194,7 +165,7 @@ def change_prefix(context, args):
 
 
 #
-# get cmdHandler object
-def get_cmd_handler():
-    return cmdHandler
+# get commandHandler object
+def get_command_handler():
+    return commandHandler
 

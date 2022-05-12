@@ -1,21 +1,12 @@
 #
 # imports
-import os
 import discord
-from dotenv import load_dotenv
 
 #
 # project imports
 import commands
 import database_handler as db
 import soupbot_utilities as util
-
-#
-# get .env values
-load_dotenv("values.env")
-TOKEN = os.getenv("DISCORD_TOKEN")
-MYSQL_USERNAME, MYSQL_PASSWORD = os.getenv("MYSQL_USERNAME"), os.getenv("MYSQL_PASSWORD")
-MYSQL_HOST, MYSQL_DB = os.getenv("MYSQL_HOST"), os.getenv("MYSQL_DB")
 
 
 #
@@ -29,7 +20,7 @@ class SoupBotClient(discord.Client):
         db.init()
         #
         # init cmd_handler
-        self.cmdHandler = commands.get_cmd_handler()
+        self.cmdHandler = commands.get_command_handler()
 
     # on connection to discord
     async def on_ready(self):
@@ -58,9 +49,9 @@ class SoupBotClient(discord.Client):
             return
 
         flag = message.content[0]
-        cmdArgs = message.content.split(" ")
-        cmd = cmdArgs.pop(0)[1:]
+        args = message.content.split(" ")
+        cmd = args.pop(0)[1:]
 
-        if db.get_flag(message.guild) == flag and self.cmdHandler.is_cmd(cmd):
-            temp = self.cmdHandler.pass_cmd(cmd, message, cmdArgs)
+        if db.get_flag(message.guild.id) == flag and self.cmdHandler.is_command(cmd):
+            temp = self.cmdHandler.pass_command(cmd, message, args)
             await message.channel.send(temp)

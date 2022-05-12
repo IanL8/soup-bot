@@ -1,6 +1,8 @@
 #
 # imports
+import random
 import sqlite3 as sql
+import time
 
 #
 # project imports
@@ -135,6 +137,41 @@ def get_flag(gid) -> str:
         return "!"  # default
 
     return k[0][0]
+
+
+def get_fortune(uid) -> str:
+    conn = sql.connect("database.db")
+    lastUsage = 0
+
+    # check if userId is already in the table
+    k = query(conn, "SELECT tid FROM UserTimers WHERE uid=?;", (uid,))
+    if k == -1:
+        return "[Error] Bad query"
+
+    # if not, add them to the table
+    if not util.find_in_list("fortune", k):
+        k = query(conn, "INSERT INTO UserTimers (tid, uid) VALUES (?, ?);", ("fortune", uid))
+        if k == -1:
+            return "[Error] Bad query"
+    # if they are, fetch the last time fortune was used
+    else:
+        k = query(conn, "SELECT start_time FROM UserTimers WHERE uid=?;", (uid,))
+        if k == -1:
+            return "[Error] Bad query"
+        lastUsage = k[0][0]
+
+    # if it has not been 20 hrs, return the time remaining to the next use
+    t = time.time() - lastUsage
+    if t < 72000:
+        return util.time_remaining_to_string(72000 - t) + " until next fortune redeem."
+
+    # update the table with the current time and return the fortune
+    k = query(conn, "UPDATE UserTimers SET start_time=? WHERE uid=?;", (int(time.time()), uid))
+    if k == -1:
+        return "[Error] Bad query"
+
+    conn.commit()
+    return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
 
 
 def add_movie(gid, movieName) -> bool:
