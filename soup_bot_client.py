@@ -43,7 +43,7 @@ class SoupBotClient(discord.Client):
 
     # on message
     async def on_message(self, message):
-        if message.author == self.user:
+        if message.author == self.user or len(message.content) == 0:
             return
 
         flag = message.content[0]
