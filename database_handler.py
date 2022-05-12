@@ -81,14 +81,18 @@ def query(conn, q, values=tuple()):
             k = conn.execute(q).fetchall()
         else:
             k = conn.execute(q, values).fetchall()
+        util.soup_log("[SQL] {q} query on {v} values".format(q=queryType, v=(values if values else "no")))
     except sql.OperationalError as e1:
         util.soup_log("[Error] OperationError on {s} query".format(s=queryType))
+        util.soup_log("Query values: {s}".format(s=values))
         util.soup_log(str(e1.args))
     except sql.IntegrityError as e2:
         util.soup_log("[Error] IntegrityError on {s} query".format(s=queryType))
+        util.soup_log("Query values: {s}".format(s=values))
         util.soup_log(str(e2.args))
     except sql.Error as e3:
         util.soup_log("[Error] Unknown SQL error on {s} query".format(s=queryType))
+        util.soup_log("Query values: {s}".format(s=values))
         util.soup_log(str(e3.args))
     finally:
         return k
