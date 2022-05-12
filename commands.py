@@ -39,7 +39,7 @@ def roll(context, args):
 
 # word
 @commandHandler.command("word")
-def word(context=None, args=""):
+def word(context, args):
     return util.WORD_LIST[int(random.random() * len(util.WORD_LIST))]
 
 
@@ -49,10 +49,10 @@ def phrase(context, args):
     k = 2
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
         k = int(args[0])
-    temp = ""
+    temp = []
     for i in range(k):
-        temp += word() + " "
-    return temp
+        temp.insert(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
+    return util.list_to_string(temp, " ")
 
 
 # 8ball
