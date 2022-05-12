@@ -99,7 +99,7 @@ def fortune(context, args):
 
 
 # add movie
-@commandHandler.name("addmovie")
+@commandHandler.name("add")
 def add_movie(context, args):
     gid = context.guild.id
 
@@ -112,7 +112,7 @@ def add_movie(context, args):
 
 
 # remove movie
-@commandHandler.name("removemovie")
+@commandHandler.name("remove")
 def remove_movie(context, args):
     gid = context.guild.id
 
@@ -125,7 +125,7 @@ def remove_movie(context, args):
 
 
 # list out the movies
-@commandHandler.name("listmovies")
+@commandHandler.name("movies")
 def movie_list(context, args):
     gid = context.guild.id
 
