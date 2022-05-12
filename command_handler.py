@@ -19,7 +19,7 @@ class CommandHandler:
     def pass_command(self, c, context, args):
         return self.cmds[c](context, args)
 
-    def name(self, name: str):
+    def command(self, name: str):
 
         def decorator(f: callable):
 

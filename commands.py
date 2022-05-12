@@ -17,19 +17,19 @@ commandHandler = CommandHandler()
 
 
 # help
-@commandHandler.name("help")
+@commandHandler.command("help")
 def cmd_help(context, args):
     return "Commands: {s}".format(s=util.list_to_string(commandHandler.list_commands(), ", "))
 
 
 # true
-@commandHandler.name("true")
+@commandHandler.command("true")
 def true_lulw(context, args):
     return ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
 
 
 # roll <#>
-@commandHandler.name("roll")
+@commandHandler.command("roll")
 def roll(context, args):
     k = 100
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
@@ -38,13 +38,13 @@ def roll(context, args):
 
 
 # word
-@commandHandler.name("word")
+@commandHandler.command("word")
 def word(context=None, args=""):
     return util.WORD_LIST[int(random.random() * len(util.WORD_LIST))]
 
 
 # phrase <#>
-@commandHandler.name("phrase")
+@commandHandler.command("phrase")
 def phrase(context, args):
     k = 2
     if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
@@ -56,7 +56,7 @@ def phrase(context, args):
 
 
 # 8ball
-@commandHandler.name("8ball")
+@commandHandler.command("8ball")
 def magic_8Ball(context, args):
     if context.author.id == 295323286244687872:
         return util.MAGIC_8BALL_LIST[int(random.random() * 10)]
@@ -64,15 +64,15 @@ def magic_8Ball(context, args):
 
 
 # lookup <name>
-@commandHandler.name("lookup")
+@commandHandler.command("lookup")
 def lookup(context, args):
     if len(args) == 0:
         return "No name specified."
-    return "https://na.op.gg/summoner/userName=" + args[0]
+    return "https://na.op.gg/summoner/userName=" + util.list_to_string(args, "")
 
 
 # which <options>
-@commandHandler.name("which")
+@commandHandler.command("which")
 def which(context, args):
     tempList = [s.strip() for s in util.list_to_string(args).split(",")]
     while "" in tempList:
@@ -83,7 +83,7 @@ def which(context, args):
 
 
 # git
-@commandHandler.name("git")
+@commandHandler.command("git")
 def git(context, args):
     return "https://github.com/IanL8/soup-bot"
 
@@ -92,7 +92,7 @@ def git(context, args):
 # database cmds
 
 # fortune
-@commandHandler.name("fortune")
+@commandHandler.command("fortune")
 def fortune(context, args):
     uid = context.author.id
 
@@ -100,7 +100,7 @@ def fortune(context, args):
 
 
 # add movie
-@commandHandler.name("add")
+@commandHandler.command("add")
 def add_movie(context, args):
     gid = context.guild.id
 
@@ -113,7 +113,7 @@ def add_movie(context, args):
 
 
 # remove movie
-@commandHandler.name("remove")
+@commandHandler.command("remove")
 def remove_movie(context, args):
     gid = context.guild.id
 
@@ -126,7 +126,7 @@ def remove_movie(context, args):
 
 
 # list out the movies
-@commandHandler.name("movies")
+@commandHandler.command("movies")
 def movie_list(context, args):
     gid = context.guild.id
 
@@ -142,7 +142,7 @@ def movie_list(context, args):
 # admin commands
 
 # change prefix
-@commandHandler.name("changeprefix")
+@commandHandler.command("changeprefix")
 def set_flag(context, args):
     if len(args) == 0 or len(args[0]) < 0 or len(args[0]) > 2:
         return "Bad prefix"
