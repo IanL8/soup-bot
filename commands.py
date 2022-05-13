@@ -1,6 +1,7 @@
 #
 # imports
 import random
+import time
 
 #
 # project imports
@@ -11,7 +12,6 @@ import soupbot_utilities as util
 #
 # globals
 commandHandler = CommandHandler()
-
 
 #
 # basic cmds
@@ -89,6 +89,51 @@ def git(context, args):
 
 
 #
+# timers
+timers = dict()
+
+# start timer
+@commandHandler.command("start")
+def start_timer(context, args):
+    if len(args) == 0:
+        return "no name specified"
+
+    name = util.list_to_string(args, " ")
+    if name in timers.keys():
+        return "the name *{}* is already in use".format(name)
+
+    timers[name] = time.time()
+    return "timer *{}* started".format(name)
+
+
+# check timer
+@commandHandler.command("check")
+def check_timer(context, args):
+    if len(args) == 0:
+        return "no timer specified"
+
+    name = util.list_to_string(args, " ")
+    if name not in timers.keys():
+        return "no timer named *{}*".format(name)
+
+    return util.time_to_string(time.time() - timers[name])
+
+
+# stop timer
+@commandHandler.command("stop")
+def stop_timer(context, args):
+    if len(args) == 0:
+        return "no timer specified"
+
+    name = util.list_to_string(args, " ")
+    if name not in timers.keys():
+        return "no timer named *{}*".format(name)
+
+    current = time.time() - timers[name]
+    timers.pop(name)
+    return "*{}* stopped at {}".format(name, util.time_to_string(current))
+
+#
 # database cmds
 
 # fortune
@@ -137,7 +182,6 @@ def movie_list(context, args):
     temp += "\n```"
     return temp
 
-
 #
 # admin commands
 
@@ -158,4 +202,3 @@ def set_flag(context, args):
 # get commandHandler object
 def get_command_handler():
     return commandHandler
-
