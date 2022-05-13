@@ -140,6 +140,15 @@ def stop_timer(context, args):
     timers.pop(name)
     return "*{}* stopped at {}".format(name, util.time_to_string(current))
 
+
+# get timers
+@commandHandler.command("timers")
+def get_timers(context, args):
+    if len(timers) == 0:
+        return "no timers"
+
+    return util.list_to_string(timers.keys(), ", ")
+
 #
 # database cmds
 
