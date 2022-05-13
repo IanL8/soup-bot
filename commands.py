@@ -91,6 +91,10 @@ def git(context, args):
 #
 # timers
 timers = dict()
+class Timer:
+    def __init__(self, uid, startTime):
+        self.uid = uid
+        self.startTime = startTime
 
 # start timer
 @commandHandler.command("start")
@@ -102,7 +106,7 @@ def start_timer(context, args):
     if name in timers.keys():
         return "the name *{}* is already in use".format(name)
 
-    timers[name] = time.time()
+    timers[name] = Timer(context.author.id, time.time())
     return "timer *{}* started".format(name)
 
 
@@ -116,7 +120,7 @@ def check_timer(context, args):
     if name not in timers.keys():
         return "no timer named *{}*".format(name)
 
-    return util.time_to_string(time.time() - timers[name])
+    return util.time_to_string(time.time() - timers[name].startTime)
 
 
 # stop timer
@@ -129,7 +133,10 @@ def stop_timer(context, args):
     if name not in timers.keys():
         return "no timer named *{}*".format(name)
 
-    current = time.time() - timers[name]
+    if timers[name].uid != context.author.id:
+        return "this is not your timer"
+
+    current = time.time() - timers[name].startTime
     timers.pop(name)
     return "*{}* stopped at {}".format(name, util.time_to_string(current))
 
