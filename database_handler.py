@@ -215,7 +215,7 @@ def get_fortune(uid) -> str:
     # if it has not been 20 hrs since the last use
     t = time.time() - lastUsage
     if t < 72000:
-        return util.time_remaining_to_string(72000 - t) + " until next fortune redeem."
+        return util.time_to_string(72000 - t) + " until next fortune redeem."
 
     # else, update the table with the current time and return the fortune
     k = query(conn, "UPDATE UserTimers SET start_time=? WHERE uid=?;", (int(time.time()), uid))

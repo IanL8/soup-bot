@@ -39,7 +39,7 @@ def list_to_string(li, sep=" "):
 
 
 # takes a time t in seconds and gives the time in days, hours, min, sec
-def time_remaining_to_string(t):
+def time_to_string(t):
     timeUnits = [(86400, "days"), (3600, "hours"), (60, "min")]
     s = ""
     for i, j in timeUnits:
