@@ -25,11 +25,11 @@ class SoupBotClient(discord.Client):
         for g in self.guilds:
             if not db.add_guild(g):
                 util.soup_log("[ERROR] {s} could not be added to the db".format(s=g.name))
-        util.soup_log(self.user.name + " has connected to Discord")
+        util.soup_log("[BOT] {} has connected to Discord".format(self.user.name))
 
     # on close
     async def close(self):
-        util.soup_log(self.user.name + " has disconnected from Discord")
+        util.soup_log("[BOT] {} has disconnected from Discord".format(self.user.name))
 
     # on guild join
     async def on_guild_join(self, guild):
