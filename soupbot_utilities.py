@@ -6,11 +6,11 @@ import time
 #
 # functions
 
-# find k in cursor.execute() output
-def find_in_list(k, li):
+# find val in a 2D list
+def find_in_list(val, li):
     for elements in li:
         for e in elements:
-            if k == e:
+            if val == e:
                 return True
     return False
 
