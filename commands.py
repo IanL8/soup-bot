@@ -8,6 +8,7 @@ import time
 from command_handler import CommandHandler
 import database_handler as db
 import soupbot_utilities as util
+from tagger import TAGGED_WORDS, SENTENCE_TEMPLATES
 
 #
 # globals
@@ -86,6 +87,24 @@ def which(context, args):
 @commandHandler.command("git")
 def git(context, args):
     return "https://github.com/IanL8/soup-bot"
+
+
+# make a sentence
+@commandHandler.command("sentence")
+def make_sentence(context, args):
+    # template = SENTENCE_TEMPLATES[random.random() * len(SENTENCE_TEMPLATES)]
+    template = random.choice(SENTENCE_TEMPLATES)
+    sentence = ""
+    for i, tag in enumerate(template):
+        if i == 0:
+            w = random.choice(TAGGED_WORDS[tag])
+            sentence += w[0].capitalize() + w[1:]
+        elif tag == ".":
+            sentence += random.choice(TAGGED_WORDS[tag])
+        else:
+            sentence += " " + random.choice(TAGGED_WORDS[tag])
+
+    return sentence
 
 
 #
