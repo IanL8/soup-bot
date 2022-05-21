@@ -107,6 +107,22 @@ def make_sentence(context, args):
     return sentence
 
 
+# avatar
+@commandHandler.command("avatar")
+def get_avatar(context, args):
+    name = util.list_to_string(args, " ")
+    i = None
+
+    for member in context.guild.members:
+        if str(member.nick).lower() == name.lower() or str(member.name).lower() == name.lower():
+            i = member.id
+
+    if i:
+        return str(context.guild.get_member(i).avatar_url)
+    else:
+        return "invalid nickname"
+
+
 #
 # timers
 timers = dict()
