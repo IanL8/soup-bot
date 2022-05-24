@@ -122,14 +122,15 @@ def get_avatar(context, args):
     else:
         return "invalid nickname"
 
-
 #
 # timers
+
 timers = dict()
 class Timer:
     def __init__(self, uid, startTime):
         self.uid = uid
         self.startTime = startTime
+
 
 # start timer
 @commandHandler.command("start")

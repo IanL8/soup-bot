@@ -12,7 +12,6 @@ import soupbot_utilities as util
 # globals
 flags = dict()
 
-
 # create tables
 def init() -> bool:
     conn = sql.connect("database.db")
@@ -100,7 +99,6 @@ def query(conn, q, values=tuple()):
     finally:
         return k
 
-
 #
 # guilds
 
@@ -185,7 +183,6 @@ def set_flag(uid, gid, newFlag) -> str:
     conn.commit()
     flags[gid] = newFlag
     return "Change successful"
-
 
 #
 # commands

@@ -2,7 +2,6 @@
 # project imports
 import soupbot_utilities as util
 
-
 #
 # command handler
 class CommandHandler:

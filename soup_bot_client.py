@@ -8,7 +8,6 @@ import commands
 import database_handler as db
 import soupbot_utilities as util
 
-
 #
 # soupbot
 class SoupBotClient(discord.Client):

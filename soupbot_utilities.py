@@ -64,9 +64,9 @@ def get_date():
 def soup_log(s):
     print("{date}: {msg}".format(date=get_date(), msg=s))
 
-
 #
 # constants
+
 MAGIC_8BALL_LIST = ["It is certain.",
                     "It is decidedly so.",
                     "Without a doubt.",
@@ -88,5 +88,7 @@ MAGIC_8BALL_LIST = ["It is certain.",
                     "Outlook not so good.",
                     "Very doubtful."
                     ]
+
 WORD_LIST = read_file_to_list("src/word_list.txt")  # list of words from https://www.mit.edu/~ecprice/wordlist.10000
+
 FORTUNES = read_file_to_list("src/fort.txt")
