@@ -59,7 +59,6 @@ def init() -> bool:
     conn.commit()
     return True
 
-
 #
 # queries
 
@@ -145,7 +144,6 @@ def add_member(uid, gid) -> bool:
 
     conn.commit()
     return True
-
 
 #
 # flags
