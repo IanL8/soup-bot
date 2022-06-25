@@ -104,67 +104,67 @@ def get_avatar(context, args):
         return "invalid nickname"
 
 #
-# timers
+# stopwatch
 
-timers = dict()
-class Timer:
+stopwatches = dict()
+class Stopwatch:
     def __init__(self, uid, startTime):
         self.uid = uid
         self.startTime = startTime
 
 
-# start timer
+# start stopwatch
 @commandHandler.command("start")
-def start_timer(context, args):
+def start_stopwatch(context, args):
     if len(args) == 0:
         return "no name specified"
 
     name = util.list_to_string(args, " ")
-    if name in timers.keys():
+    if name in stopwatches.keys():
         return "the name *{}* is already in use".format(name)
 
-    timers[name] = Timer(context.author.id, time.time())
-    return "timer *{}* started".format(name)
+    stopwatches[name] = Stopwatch(context.author.id, time.time())
+    return "stopwatch *{}* started".format(name)
 
 
-# check timer
+# check stopwatch
 @commandHandler.command("check")
-def check_timer(context, args):
+def check_stopwatch(context, args):
     if len(args) == 0:
-        return "no timer specified"
+        return "no stopwatch specified"
 
     name = util.list_to_string(args, " ")
-    if name not in timers.keys():
-        return "no timer named *{}*".format(name)
+    if name not in stopwatches.keys():
+        return "no stopwatch named *{}*".format(name)
 
-    return util.time_to_string(time.time() - timers[name].startTime)
+    return util.time_to_string(time.time() - stopwatches[name].startTime)
 
 
-# stop timer
+# stop stopwatch
 @commandHandler.command("stop")
-def stop_timer(context, args):
+def stop_stopwatch(context, args):
     if len(args) == 0:
-        return "no timer specified"
+        return "no stopwatch specified"
 
     name = util.list_to_string(args, " ")
-    if name not in timers.keys():
-        return "no timer named *{}*".format(name)
+    if name not in stopwatches.keys():
+        return "no stopwatch named *{}*".format(name)
 
-    if timers[name].uid != context.author.id:
-        return "this is not your timer"
+    if stopwatches[name].uid != context.author.id:
+        return "this is not your stopwatch"
 
-    current = time.time() - timers[name].startTime
-    timers.pop(name)
+    current = time.time() - stopwatches[name].startTime
+    stopwatches.pop(name)
     return "*{}* stopped at {}".format(name, util.time_to_string(current))
 
 
-# get timers
-@commandHandler.command("timers")
-def get_timers(context, args):
-    if len(timers) == 0:
-        return "no timers"
+# get stopwatches
+@commandHandler.command("stopwatches")
+def get_stopwatches(context, args):
+    if len(stopwatches) == 0:
+        return "no stopwatches"
 
-    return util.list_to_string(timers.keys(), ", ")
+    return util.list_to_string(stopwatches.keys(), ", ")
 
 #
 # database cmds
