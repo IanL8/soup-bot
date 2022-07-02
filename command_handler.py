@@ -15,16 +15,16 @@ class CommandHandler:
     def list_commands(self):
         return self.cmds.keys()
 
-    def pass_command(self, c, context, args):
-        return self.cmds[c](context, args)
+    def pass_command(self, c, context):
+        return self.cmds[c](context)
 
     def command(self, name: str):
 
         def decorator(f: callable):
 
-            def wrapper(context, args):
-                util.soup_log("[CMD] {} on {}".format(name, args))
-                return f(context, args)
+            def wrapper(context):
+                util.soup_log("[CMD] {} on {}".format(name, context.args))
+                return f(context)
 
             self.cmds[name] = wrapper
 

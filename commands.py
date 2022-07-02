@@ -18,80 +18,88 @@ commandHandler = CommandHandler()
 
 # help
 @commandHandler.command("help")
-def cmd_help(context, args):
-    return "Commands: {s}".format(s=util.list_to_string(commandHandler.list_commands(), ", "))
+async def cmd_help(context):
+    msg = "Commands: {s}".format(s=util.list_to_string(commandHandler.list_commands(), ", "))
+    await context.channel.send(msg)
 
 
 # true
 @commandHandler.command("true")
-def true_lulw(context, args):
-    return ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
+async def true_lulw(context):
+    msg = ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
+    await context.channel.send(msg)
 
 
 # roll <#>
 @commandHandler.command("roll")
-def roll(context, args):
+async def roll(context):
     k = 100
-    if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
-        k = int(args[0])
-    return str(int(random.random() * k) + 1)
+    if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
+        k = int(context.args[0])
+    await context.channel.send(str(int(random.random() * k) + 1))
 
 
 # word
 @commandHandler.command("word")
-def word(context, args):
-    return util.WORD_LIST[int(random.random() * len(util.WORD_LIST))]
+async def word(context):
+    await context.channel.send(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
 
 
 # phrase <#>
 @commandHandler.command("phrase")
-def phrase(context, args):
+async def phrase(context):
     k = 2
-    if len(args) > 0 and args[0].isdigit() and int(args[0]) != 0:
-        k = int(args[0])
+    if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
+        k = int(context.args[0])
     temp = []
     for i in range(k):
         temp.append(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
-    return util.list_to_string(temp, " ")
+    await context.channel.send(util.list_to_string(temp, " "))
 
 
 # 8ball
 @commandHandler.command("8ball")
-def magic_8Ball(context, args):
+async def magic_8Ball(context):
     if context.author.id == 295323286244687872:
-        return util.MAGIC_8BALL_LIST[int(random.random() * 10)]
-    return util.MAGIC_8BALL_LIST[int(random.random() * len(util.MAGIC_8BALL_LIST))]
+        await context.channel.send(util.MAGIC_8BALL_LIST[int(random.random() * 10)])
+    await context.channel.send(random.choice(util.MAGIC_8BALL_LIST))
 
 
 # lookup <name>
 @commandHandler.command("lookup")
-def lookup(context, args):
-    if len(args) == 0:
-        return "No name specified."
-    return "https://na.op.gg/summoner/userName=" + util.list_to_string(args, "")
+async def lookup(context):
+    if len(context.args) == 0:
+        msg = "No name specified."
+    else:
+        msg = "https://na.op.gg/summoner/userName=" + util.list_to_string(context.args, "")
+
+    await context.channel.send(msg)
 
 
 # which <options>
 @commandHandler.command("which")
-def which(context, args):
-    tempList = [s.strip() for s in util.list_to_string(args).split(",")]
+async def which(context):
+    tempList = [s.strip() for s in util.list_to_string(context.args).split(",")]
     while "" in tempList:
         tempList.remove("")
     if len(tempList) == 0:
-        return "No options specified."
-    return tempList[int(random.random() * len(tempList))]
+        msg =  "No options specified."
+    else:
+        msg = tempList[int(random.random() * len(tempList))]
+
+    await context.channel.send(msg)
 
 
 # git
 @commandHandler.command("git")
-def git(context, args):
-    return "https://github.com/IanL8/soup-bot"
+async def git(context):
+    await context.channel.send("https://github.com/IanL8/soup-bot")
 
 
 # avatar
 @commandHandler.command("avatar")
-def get_avatar(context, args):
-    name = util.list_to_string(args, " ")
+async def get_avatar(context):
+    name = util.list_to_string(context.args, " ")
     i = None
 
     for member in context.guild.members:
@@ -99,9 +107,11 @@ def get_avatar(context, args):
             i = member.id
 
     if i:
-        return str(context.guild.get_member(i).avatar_url)
+        msg = str(context.guild.get_member(i).avatar_url)
     else:
-        return "invalid nickname"
+        msg = "invalid nickname"
+
+    await context.channel.send(msg)
 
 #
 # stopwatch
@@ -115,97 +125,126 @@ class Stopwatch:
 
 # start stopwatch
 @commandHandler.command("start")
-def start_stopwatch(context, args):
-    if len(args) == 0:
-        return "no name specified"
+async def start_stopwatch(context):
+    if len(context.args) == 0:
+        msg = "no name specified"
 
-    name = util.list_to_string(args, " ")
+    name = util.list_to_string(context.args, " ")
     if name in stopwatches.keys():
-        return "the name *{}* is already in use".format(name)
+        msg = "the name *{}* is already in use".format(name)
+    else:
+        stopwatches[name] = Stopwatch(context.author.id, time.time())
+        msg = "stopwatch *{}* started".format(name)
 
-    stopwatches[name] = Stopwatch(context.author.id, time.time())
-    return "stopwatch *{}* started".format(name)
+    await context.channel.send(msg)
 
 
 # check stopwatch
 @commandHandler.command("check")
-def check_stopwatch(context, args):
-    if len(args) == 0:
+async def check_stopwatch(context):
+    if len(context.args) == 0:
         return "no stopwatch specified"
 
-    name = util.list_to_string(args, " ")
+    name = util.list_to_string(context.args, " ")
     if name not in stopwatches.keys():
-        return "no stopwatch named *{}*".format(name)
+        msg = "no stopwatch named *{}*".format(name)
+    else:
+        msg = util.time_to_string(time.time() - stopwatches[name].startTime)
 
-    return util.time_to_string(time.time() - stopwatches[name].startTime)
+    await context.channel.send(msg)
 
 
 # stop stopwatch
 @commandHandler.command("stop")
-def stop_stopwatch(context, args):
-    if len(args) == 0:
+async def stop_stopwatch(context):
+    if len(context.args) == 0:
         return "no stopwatch specified"
 
-    name = util.list_to_string(args, " ")
+    name = util.list_to_string(context.args, " ")
     if name not in stopwatches.keys():
-        return "no stopwatch named *{}*".format(name)
+        msg = "no stopwatch named *{}*".format(name)
+    elif stopwatches[name].uid != context.author.id:
+        msg = "this is not your stopwatch"
+    else:
+        current = time.time() - stopwatches[name].startTime
+        stopwatches.pop(name)
+        msg = "*{}* stopped at {}".format(name, util.time_to_string(current))
 
-    if stopwatches[name].uid != context.author.id:
-        return "this is not your stopwatch"
-
-    current = time.time() - stopwatches[name].startTime
-    stopwatches.pop(name)
-    return "*{}* stopped at {}".format(name, util.time_to_string(current))
-
+    await context.channel.send(msg)
 
 # get stopwatches
 @commandHandler.command("stopwatches")
-def get_stopwatches(context, args):
+async def get_stopwatches(context):
     if len(stopwatches) == 0:
-        return "no stopwatches"
+        msg = "no stopwatches"
+    else:
+        msg = util.list_to_string(stopwatches.keys(), ", ")
 
-    return util.list_to_string(stopwatches.keys(), ", ")
+    await context.channel.send(msg)
+
+#
+# music
+queue = list()
+
+# join vc
+@commandHandler.command("join")
+async def join(context):
+
+    # voice_client = context.guild.voice_client
+
+    if not context.author.voice:
+        return "user not in voice"
+
+    channel = context.author.voice.channel
+    await channel.connect()
 
 #
 # database cmds
 
 # fortune
 @commandHandler.command("fortune")
-def fortune(context, args):
+async def fortune(context):
     uid = context.author.id
 
-    return db.get_fortune(uid)
+    await context.channel.send(db.get_fortune(uid))
 
 
 # add movie
 @commandHandler.command("add")
-def add_movie(context, args):
+async def add_movie(context):
     gid = context.guild.id
 
-    if len(args) == 0:
-        return "No movie given"
-    t = util.list_to_string(args)
+    if len(context.args) == 0:
+        await context.channel.send("no movie given")
+
+    t = util.list_to_string(context.args)
     if not db.add_movie(gid, t):
-        return "error"
-    return "done"
+        msg = "error"
+    else:
+        msg = "done"
+
+    await context.channel.send(msg)
 
 
 # remove movie
 @commandHandler.command("remove")
-def remove_movie(context, args):
+async def remove_movie(context):
     gid = context.guild.id
 
-    if len(args) == 0:
-        return "No movie given"
-    t = util.list_to_string(args)
-    if not db.remove_movie(gid, t):
-        return "error"
-    return "done"
+    if len(context.args) == 0:
+        await context.channel.send("no movie given")
 
+    t = util.list_to_string(context.args)
+    if not db.remove_movie(gid, t):
+        msg = "error"
+    else:
+        msg = "done"
+
+    await context.channel.send(msg)
 
 # list out the movies
 @commandHandler.command("movies")
-def movie_list(context, args):
+async def movie_list(context):
     gid = context.guild.id
 
     li = db.get_movie_list(gid)
@@ -213,22 +252,22 @@ def movie_list(context, args):
     for i in li:
         temp += i[0] + "\n"
     temp += "\n```"
-    return temp
+    await context.channel.send(temp)
 
 #
 # admin commands
 
 # change prefix
 @commandHandler.command("changeprefix")
-def set_flag(context, args):
-    if len(args) == 0 or len(args[0]) < 0 or len(args[0]) > 2:
-        return "Bad prefix"
+async def set_flag(context):
+    if len(context.args) == 0 or len(context.args[0]) < 0 or len(context.args[0]) > 2:
+        await context.channel.send("bad prefix")
 
     uid = context.author.id
     gid = context.guild.id
 
-    newFlag = args[0]
-    return db.set_flag(uid, gid, newFlag)
+    newFlag = context.args[0]
+    await context.channel.send(db.set_flag(uid, gid, newFlag))
 
 
 #

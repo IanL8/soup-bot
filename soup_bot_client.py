@@ -8,6 +8,20 @@ import commands
 import database_handler as db
 import soupbot_utilities as util
 
+
+#
+# context
+class Context:
+    # init
+    def __init__(self, message, channel, author, guild, bot, args):
+        self.message = message
+        self.channel = channel
+        self.author = author
+        self.guild = guild
+        self.bot = bot
+        self.args = args
+
+
 #
 # soupbot
 class SoupBotClient(discord.Client):
@@ -51,5 +65,9 @@ class SoupBotClient(discord.Client):
             args = message.content.split(" ")
             cmd = args.pop(0)[1:]
             if self.cmdHandler.is_command(cmd):
-                temp = self.cmdHandler.pass_command(cmd, message, args)
-                await message.channel.send(temp)
+                await self.cmdHandler.pass_command(cmd, Context(message,
+                                                                message.channel,
+                                                                message.author,
+                                                                message.guild,
+                                                                self,
+                                                                args))
