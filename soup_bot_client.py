@@ -13,11 +13,12 @@ import soupbot_utilities as util
 # context
 class Context:
     # init
-    def __init__(self, message, channel, author, guild, bot, args):
+    def __init__(self, message, channel, author, guild, voice_client, bot, args):
         self.message = message
         self.channel = channel
         self.author = author
         self.guild = guild
+        self.voice_client = voice_client
         self.bot = bot
         self.args = args
 
@@ -42,6 +43,8 @@ class SoupBotClient(discord.Client):
 
     # on close
     async def close(self):
+        for vc in self.voice_clients:
+            await vc.disconnect()
         util.soup_log("[BOT] {} has disconnected from Discord".format(self.user.name))
 
     # on guild join
@@ -69,5 +72,6 @@ class SoupBotClient(discord.Client):
                                                                 message.channel,
                                                                 message.author,
                                                                 message.guild,
+                                                                message.guild.voice_client,
                                                                 self,
                                                                 args))
