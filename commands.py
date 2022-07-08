@@ -23,10 +23,17 @@ FFMPEG_EXE = os.getenv("FFMPEG_EXE")
 #
 # basic cmds
 
+#
+# hello
+@commandHandler.command("hello")
+async def hello(context):
+    await  context.channel.send("hi {}".format(context.author.display_name))
+
+
 # help
 @commandHandler.command("help")
 async def cmd_help(context):
-    msg = "Commands: {s}".format(s=util.list_to_string(commandHandler.list_commands(), ", "))
+    msg = "Commands: {}".format(util.list_to_string(commandHandler.list_commands(), ", "))
     await context.channel.send(msg)
 
 
