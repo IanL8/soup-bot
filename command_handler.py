@@ -7,7 +7,8 @@ import soupbot_utilities as util
 class CommandHandler:
 
     def __init__(self):
-        self.cmds: dict = dict()
+        self.cmds = dict()
+        self.cmdInfo = dict()
 
     def is_command(self, c):
         return c in self.cmds.keys()
@@ -18,7 +19,7 @@ class CommandHandler:
     def pass_command(self, c, context):
         return self.cmds[c](context)
 
-    def command(self, name: str):
+    def command(self, name: str, info: str = ""):
 
         def decorator(f: callable):
 
@@ -27,6 +28,7 @@ class CommandHandler:
                 return f(context)
 
             self.cmds[name] = wrapper
+            self.cmdInfo[name] = info
 
             return wrapper
 

@@ -23,18 +23,21 @@ FFMPEG_EXE = os.getenv("FFMPEG_EXE")
 #
 # basic cmds
 
+# help
+@commandHandler.command("help")
+async def cmd_help(context):
+    msg = "Commands```\n"
+    for k, v in commandHandler.cmdInfo.items():
+        msg += k + " " * (20 - len(k)) + v + "\n"
+    msg += "```"
+    await context.channel.send(msg)
+
+
 #
 # hello
 @commandHandler.command("hello")
 async def hello(context):
-    await  context.channel.send("hi {}".format(context.author.display_name))
-
-
-# help
-@commandHandler.command("help")
-async def cmd_help(context):
-    msg = "Commands: {}".format(util.list_to_string(commandHandler.list_commands(), ", "))
-    await context.channel.send(msg)
+    await context.channel.send("hi {}".format(context.author.display_name))
 
 
 # true
@@ -45,7 +48,7 @@ async def true_lulw(context):
 
 
 # roll <#>
-@commandHandler.command("roll")
+@commandHandler.command("roll", "roll a dice with the given amount of sides [default 100]")
 async def roll(context):
     k = 100
     if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
@@ -54,13 +57,13 @@ async def roll(context):
 
 
 # word
-@commandHandler.command("word")
+@commandHandler.command("word", "random word")
 async def word(context):
     await context.channel.send(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
 
 
 # phrase <#>
-@commandHandler.command("phrase")
+@commandHandler.command("phrase", "random string of words of a given size [default 2]")
 async def phrase(context):
     k = 2
     if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
@@ -80,7 +83,7 @@ async def magic_8Ball(context):
 
 
 # lookup <name>
-@commandHandler.command("lookup")
+@commandHandler.command("lookup", "look up a given league player on op.gg")
 async def lookup(context):
     if len(context.args) == 0:
         msg = "No name specified."
@@ -91,7 +94,7 @@ async def lookup(context):
 
 
 # which <options>
-@commandHandler.command("which")
+@commandHandler.command("which", "pick between a given set of options (separated by commas)")
 async def which(context):
     tempList = [s.strip() for s in util.list_to_string(context.args).split(",")]
     while "" in tempList:
@@ -111,10 +114,13 @@ async def git(context):
 
 
 # avatar
-@commandHandler.command("avatar")
+@commandHandler.command("avatar", "fetch a user's profile picture")
 async def get_avatar(context):
     name = util.list_to_string(context.args, " ")
     i = None
+
+    if len(context.args) == 0:
+        return await context.channel.send(context.author.avatar_url)
 
     for member in context.guild.members:
         if str(member.nick).lower() == name.lower() or str(member.name).lower() == name.lower():
@@ -138,7 +144,7 @@ class Stopwatch:
 
 
 # start stopwatch
-@commandHandler.command("start")
+@commandHandler.command("start", "start a stopwatch with a given name")
 async def start_stopwatch(context):
     if len(context.args) == 0:
         return await context.channel.send("no name specified")
@@ -154,7 +160,7 @@ async def start_stopwatch(context):
 
 
 # check stopwatch
-@commandHandler.command("check")
+@commandHandler.command("check", "check a stopwatch")
 async def check_stopwatch(context):
     if len(context.args) == 0:
         return await context.channel.send("no stopwatch specified")
@@ -169,7 +175,7 @@ async def check_stopwatch(context):
 
 
 # stop stopwatch
-@commandHandler.command("stop")
+@commandHandler.command("stop", "stop a stopwatch")
 async def stop_stopwatch(context):
     if len(context.args) == 0:
         return await context.channel.send("no stopwatch specified")
@@ -188,7 +194,7 @@ async def stop_stopwatch(context):
 
 
 # get stopwatches
-@commandHandler.command("stopwatches")
+@commandHandler.command("stopwatches", "list all active stopwatches")
 async def get_stopwatches(context):
     if len(stopwatches) == 0:
         msg = "no stopwatches"
@@ -203,7 +209,7 @@ queue = list()
 
 
 # join vc
-@commandHandler.command("join")
+@commandHandler.command("join", "join vc")
 async def join(context):
 
     if not context.author.voice:
@@ -216,7 +222,7 @@ async def join(context):
 
 
 # leave vc
-@commandHandler.command("leave")
+@commandHandler.command("leave", "leave vc")
 async def leave(context):
 
     if not context.voice_client in context.bot.voice_clients:
@@ -227,7 +233,7 @@ async def leave(context):
 
 # play audio from a yt vid
 #credit: https://www.youtube.com/watch?v=jHZlvRr9KxM
-@commandHandler.command("play")
+@commandHandler.command("play", "play a given youtube video (link) in vc")
 async def play(context):
     if not context.guild.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is not in a voice channel")
@@ -269,7 +275,7 @@ async def play(context):
 
 
 # pause vid
-@commandHandler.command("pause")
+@commandHandler.command("pause", "pause the current video")
 async def pause(context):
     if not context.guild.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is not in a voice channel")
@@ -281,7 +287,7 @@ async def pause(context):
 
 
 # resume vid
-@commandHandler.command("resume")
+@commandHandler.command("resume", "resume the current video")
 async def resume(context):
     if not context.guild.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is not in a voice channel")
@@ -292,7 +298,7 @@ async def resume(context):
     context.voice_client.resume()
 
 # skip vid
-@commandHandler.command("skip")
+@commandHandler.command("skip", "skip the current video")
 async def skip(context):
     if not context.guild.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is not in a voice channel")
@@ -304,7 +310,7 @@ async def skip(context):
 # database cmds
 
 # fortune
-@commandHandler.command("fortune")
+@commandHandler.command("fortune", "get a random fortune once per day")
 async def fortune(context):
     uid = context.author.id
 
@@ -312,7 +318,7 @@ async def fortune(context):
 
 
 # add movie
-@commandHandler.command("add")
+@commandHandler.command("add", "add a movie to the list")
 async def add_movie(context):
     gid = context.guild.id
 
@@ -329,7 +335,7 @@ async def add_movie(context):
 
 
 # remove movie
-@commandHandler.command("remove")
+@commandHandler.command("remove", "remove a movie from the list")
 async def remove_movie(context):
     gid = context.guild.id
 
@@ -345,7 +351,7 @@ async def remove_movie(context):
     await context.channel.send(msg)
 
 # list out the movies
-@commandHandler.command("movies")
+@commandHandler.command("movies", "list all movies")
 async def movie_list(context):
     gid = context.guild.id
 
@@ -360,7 +366,7 @@ async def movie_list(context):
 # admin commands
 
 # change prefix
-@commandHandler.command("changeprefix")
+@commandHandler.command("changeprefix", "change the prefix that the bot is accessed with")
 async def set_flag(context):
     if len(context.args) == 0 or len(context.args[0]) < 0 or len(context.args[0]) > 2:
         return await context.channel.send("bad prefix")
