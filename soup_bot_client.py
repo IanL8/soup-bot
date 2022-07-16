@@ -8,7 +8,6 @@ import commands
 import database_handler as db
 import soupbot_utilities as util
 
-
 #
 # context
 class Context:
@@ -21,7 +20,6 @@ class Context:
         self.voice_client = voice_client
         self.bot = bot
         self.args = args
-
 
 #
 # soupbot

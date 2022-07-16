@@ -12,6 +12,9 @@ import soupbot_utilities as util
 # globals
 flags = dict()
 
+#
+# init database
+
 # create tables
 def init() -> bool:
     conn = sql.connect("database.db")
