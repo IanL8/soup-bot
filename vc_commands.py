@@ -33,8 +33,7 @@ async def join(context):
     elif context.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is already in a voice channel")
 
-    channel = context.author.voice.channel
-    await channel.connect()
+    await context.author.voice.channel.connect()
 
 
 # leave vc
@@ -51,14 +50,20 @@ async def leave(context):
 #credit: https://www.youtube.com/watch?v=jHZlvRr9KxM
 @commandHandler.command("play", "play a given youtube video (link) in vc")
 async def play(context):
+    # if bot not in voice
     if not context.guild.voice_client in context.bot.voice_clients:
-        return await context.channel.send("bot is not in a voice channel")
 
-    if context.guild.voice_client.is_playing():
-        await context.channel.send("bot is currently playing another song")
-        return await context.channel.send("skip this song in order to play another")
+        # if user is in voice
+        if context.author.voice:
+            await context.author.voice.channel.connect()
+        else:
+            return await context.channel.send("user is not in a voice channel")
 
-    context.voice_client.stop()
+    # remove this
+    # if context.guild.voice_client.is_playing():
+    #     await context.channel.send("bot is currently playing another song")
+    #     return await context.channel.send("skip this song in order to play another")
+    # context.voice_client.stop()
 
     url = util.list_to_string(context.args, "")
     FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5", "options": "-vn"}
@@ -75,7 +80,8 @@ async def play(context):
         'default_search': 'auto',
         'source_address': '0.0.0.0',  # bind to ipv4 since ipv6 addresses cause issues sometimes
     }
-    vc = context.voice_client
+    vc = context.guild.voice_client # can't use shortcut
+    playlists[context.guild] = Playlist()
 
     with youtube_dl.YoutubeDL(YDL_OPTIONS) as ydl:
         try:
@@ -84,16 +90,17 @@ async def play(context):
             util.soup_log("[ERROR] {}".format(str(e1.args)))
             return await context.channel.send("invalid link")
 
-        if info["_type"] == "playlist":
+        if info.get("_type") == "playlist":
             for e in info["entries"]:
                 url2 = e["formats"][0]["url"]
                 source = await discord.FFmpegOpusAudio.from_probe(url2, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
-                vc.play(source)
+                playlists[context.guild].queue.append(source)
         else:
             url2 = info["formats"][0]["url"]
             source = await discord.FFmpegOpusAudio.from_probe(url2, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
+            playlists[context.guild].queue.append(source)
 
-        vc.play(source)
+        vc.play(playlists[context.guild].queue.pop(0))
 
 
 # pause vid
@@ -118,6 +125,7 @@ async def resume(context):
         return await context.channel.send("the song is already playing")
 
     context.voice_client.resume()
+
 
 # skip vid
 @commandHandler.command("skip", "skip the current video")
