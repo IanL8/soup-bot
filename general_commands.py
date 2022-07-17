@@ -180,7 +180,7 @@ async def movie_list(context):
 # admin commands
 
 # change prefix
-@commandHandler.command("changeprefix", "change the prefix that the bot is accessed with")
+@commandHandler.command("change_prefix", "change the prefix that the bot is accessed with")
 async def set_flag(context):
     if len(context.args) == 0 or len(context.args[0]) < 0 or len(context.args[0]) > 2:
         return await context.channel.send("bad prefix")
