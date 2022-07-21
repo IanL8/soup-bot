@@ -43,6 +43,7 @@ class SoupBotClient(discord.Client):
     async def close(self):
         for vc in self.voice_clients:
             await vc.disconnect()
+        commands.cleanup()
         util.soup_log("[BOT] {} has disconnected from Discord".format(self.user.name))
 
     # on guild join
