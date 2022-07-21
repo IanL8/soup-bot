@@ -48,6 +48,7 @@ playlists = dict()
 class Playlist:
     def __init__(self):
         self.queue = list()
+        self.playing = False
 
 # song
 class Song:
@@ -61,7 +62,7 @@ class Song:
 #play next
 def play_next(loop, guild, channel, vc):
     if len(playlists[guild].queue) == 0:
-        del playlists[guild]
+        playlists[guild].playing = False
         return
 
     song = playlists[guild].queue.pop(0)
@@ -78,7 +79,6 @@ async def play_next_helper(song, loop, guild, channel, vc):
 # idea: https://stackoverflow.com/a/26270790
 
 downloadQueue = list()
-
 stopThread = False
 
 def loop_in_thread(loop):
@@ -88,7 +88,7 @@ def loop_in_thread(loop):
 
 async def download_queue_processor():
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(5)
         if stopThread:
             return
         if downloadQueue:
@@ -110,7 +110,6 @@ t.start()
 def close():
     global stopThread
     stopThread = True
-
 
 #
 # bot commands
@@ -161,32 +160,43 @@ async def play(context):
     if not playlists.get(context.guild):
         playlists[context.guild] = Playlist()
 
-    with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-
-        if "https://www.youtube.com/playlist?list=PL" in url:
-            queue = list()
-            for u in YTPlaylist(url).video_urls:
-                queue.append(u)
+    # if yt link is a playlist
+    if "https://www.youtube.com/playlist?list=PL" in url:
+        queue = list()
+        for u in YTPlaylist(url).video_urls:
+            queue.append(u)
+        if not playlists[context.guild].playing:
             url = queue.pop(0)
             downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
+        else:
+            downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
+            return
 
+    # if playing
+    if playlists[context.guild].playing:
+        downloadQueue.append(([url,], context.bot.loop, context.guild, context.channel))
+        return
+
+    # if not playing
+    with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
         try:
             info = ydl.extract_info(url, download=False)
-            playlists[context.guild].queue.append(Song(info["url"], info["title"]))
+            song = Song(info["url"], info["title"])
         except yt_dlp.DownloadError as derr:
             util.soup_log("[ERROR] {}".format(derr.args))
             return await context.channel.send("invalid link")
 
-        if not vc.is_playing():
-
-            song = playlists[context.guild].queue.pop(0)
-
+        if not playlists[context.guild].playing:
+            playlists[context.guild].playing = True
             try:
                 source = await discord.FFmpegOpusAudio.from_probe(song.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
                 await context.channel.send(f"now playing...\n```{song.title}```")
                 vc.play(source, after=(lambda err: play_next(context.bot.loop, context.guild, context.channel, vc)))
             except discord.errors.ClientException:
-                playlists[context.guild].queue.insert(0, song)
+                playlists[context.guild].playing = False
+                playlists[context.guild].queue.append(song)
+        else:
+            playlists[context.guild].queue.append(song)
 
 # pause vid
 @commandHandler.command("pause", "pause the current video")
