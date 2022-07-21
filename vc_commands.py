@@ -2,7 +2,6 @@
 # imports
 import discord
 import asyncio
-import async_timeout
 import youtube_dl
 import os
 from dotenv import load_dotenv
@@ -17,11 +16,17 @@ import soupbot_utilities as util
 
 load_dotenv("values.env")
 FFMPEG_EXE = os.getenv("FFMPEG_EXE")
+USERNAME = os.getenv("YT_USERNAME")
+PASSWORD = os.getenv("YT_PASSWORD")
 
 FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5", "options": "-vn"}
 
 YDL_OPTIONS = {  # taken from https://github.com/Rapptz/discord.py/blob/master/examples/basic_voice.py
     'format': 'bestaudio/best',
+    # 'username': USERNAME,
+    # 'password': PASSWORD,
+    # "cookies": "src/youtube.com_cookies.txt",
+    "agelimit": 30,
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
     'noplaylist': False,
@@ -63,10 +68,10 @@ def play_next(loop, guild, channel, vc):
     asyncio.run(play_next_helper(song, loop, guild, channel, vc))
 
 async def play_next_helper(song, loop, guild, channel, vc):
+    await asyncio.sleep(1)
     source = await discord.FFmpegOpusAudio.from_probe(song.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
-    vc.play(source, after=lambda err: play_next(loop, guild, channel, vc))
-
     asyncio.run_coroutine_threadsafe(channel.send(f"now playing...\n```{song.title}```"), loop)
+    vc.play(source, after=lambda err: play_next(loop, guild, channel, vc))
 
 #
 # bot commands
@@ -117,7 +122,7 @@ async def play(context):
         try:
             info = ydl.extract_info(url, download=False)
         except youtube_dl.DownloadError as e1:
-            util.soup_log("[ERROR] {}".format(str(e1.args)))
+            util.soup_log("[ERROR] {}".format(e1.args))
             return await context.channel.send("invalid link")
 
         if info.get("_type") == "playlist":
@@ -135,9 +140,9 @@ async def play(context):
             song = playlists[context.guild].queue.pop(0)
 
             try:
-                vc.play(await discord.FFmpegOpusAudio.from_probe(song.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS),
-                        after=(lambda err: play_next(context.bot.loop, context.guild, context.channel, vc)))
+                source = await discord.FFmpegOpusAudio.from_probe(song.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
                 await context.channel.send(f"now playing...\n```{song.title}```")
+                vc.play(source, after=(lambda err: play_next(context.bot.loop, context.guild, context.channel, vc)))
             except discord.errors.ClientException:
                 playlists[context.guild].queue.insert(0, song)
 
