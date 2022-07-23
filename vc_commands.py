@@ -161,17 +161,19 @@ async def play(context):
     if not playlists.get(context.guild):
         playlists[context.guild] = Playlist()
 
-    playlists[context.guild].playing = True
+
+    # playlists[context.guild].playing = True
 
     # if yt link is a playlist
+    queue = None
     if "https://www.youtube.com/playlist?list=PL" in url:
         queue = list(YTPlaylist(url).video_urls)
-        if not playlists[context.guild].playing:
-            url = queue.pop(0)
-            downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
-        else:
+        # if playing
+        if playlists[context.guild].playing:
             downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
             return
+        else:
+            url = queue.pop(0)
 
     # if playing
     if playlists[context.guild].playing:
@@ -182,6 +184,8 @@ async def play(context):
 
     # play song
     with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+        playlists[context.guild].playing = True
+
         try:
             info = ydl.extract_info(url, download=False)
             song = Song(info["url"], info["title"])
@@ -191,6 +195,8 @@ async def play(context):
             return await context.channel.send("invalid link")
 
         try:
+            if queue:
+                downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
             source = await discord.FFmpegOpusAudio.from_probe(song.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
             await context.channel.send(f"now playing...\n```{song.title}```")
             vc.play(source, after=(lambda err: play_next(context.bot.loop, context.guild, context.channel, vc)))
