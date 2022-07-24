@@ -2,6 +2,7 @@
 # imports
 import discord
 import asyncio
+from async_timeout import timeout
 import threading
 import yt_dlp
 from pytube import Playlist as YTPlaylist
@@ -127,7 +128,7 @@ async def join(context):
         return await context.channel.send("bot is already in a voice channel")
 
     await context.author.voice.channel.connect()
-
+    await context.message.add_reaction("✅")
 
 # leave vc
 @commandHandler.command("leave", "leave vc")
@@ -136,8 +137,10 @@ async def leave(context):
     if not context.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is not in a voice channel")
 
-    playlists[context.guild].queue = list()
+    if playlists.get(context.guild):
+        playlists.get(context.guild).queue = list()
     await context.voice_client.disconnect()
+    await context.message.add_reaction("✅")
 
 
 # play audio from a yt vid
@@ -146,7 +149,7 @@ async def leave(context):
 async def play(context):
     # if not a youtube link
     url = util.list_to_string(context.args, "")
-    if not "https://www.youtube.com/" in url:
+    if not ("https://www.youtube.com/" in url or "https://youtu.be/" in url):
         return await context.channel.send("not a youtube link")
 
     # if bot not in voice
@@ -161,30 +164,28 @@ async def play(context):
     if not playlists.get(context.guild):
         playlists[context.guild] = Playlist()
 
-
-    # playlists[context.guild].playing = True
-
     # if yt link is a playlist
     queue = None
-    if "https://www.youtube.com/playlist?list=PL" in url:
+    if "playlist?list=PL" in url:
         queue = list(YTPlaylist(url).video_urls)
         # if playing
         if playlists[context.guild].playing:
             downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
+            await context.message.add_reaction("✅")
             return
         else:
             url = queue.pop(0)
-
-    # if playing
-    if playlists[context.guild].playing:
-        downloadQueue.append(([url,], context.bot.loop, context.guild, context.channel))
-        return
-
-    vc = context.guild.voice_client # can't use shortcut
+    else:
+        # if playing
+        if playlists[context.guild].playing:
+            downloadQueue.append(([url,], context.bot.loop, context.guild, context.channel))
+            await context.message.add_reaction("✅")
+            return
 
     # play song
     with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
         playlists[context.guild].playing = True
+        vc = context.guild.voice_client # can't use shortcut
 
         try:
             info = ydl.extract_info(url, download=False)
@@ -200,6 +201,7 @@ async def play(context):
             source = await discord.FFmpegOpusAudio.from_probe(song.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
             await context.channel.send(f"now playing...\n```{song.title}```")
             vc.play(source, after=(lambda err: play_next(context.bot.loop, context.guild, context.channel, vc)))
+            await context.message.add_reaction("✅")
         except discord.errors.ClientException:
             playlists[context.guild].playing = False
             playlists[context.guild].queue.append(song)
@@ -215,6 +217,7 @@ async def pause(context):
         return await context.channel.send("there is no video playing")
 
     context.voice_client.pause()
+    await context.message.add_reaction("✅")
 
 
 # resume vid
@@ -227,6 +230,7 @@ async def resume(context):
         return await context.channel.send("the video is already playing")
 
     context.voice_client.resume()
+    await context.message.add_reaction("✅")
 
 
 # skip vid
@@ -239,6 +243,7 @@ async def skip(context):
         return await context.channel.send("there is no video playing")
 
     context.voice_client.stop()
+    await context.message.add_reaction("✅")
 
 
 # queue
@@ -247,29 +252,56 @@ async def get_queue(context):
     if not playlists.get(context.guild) or len(playlists[context.guild].queue) == 0:
         return await context.channel.send("there is no queue")
 
-    limit = 20 if len(playlists[context.guild].queue) > 20 else len(playlists[context.guild].queue)
-    msg = f"the next {limit} videos...```\n"
-    for i in range(0, limit):
-        msg += f"{playlists[context.guild].queue[i].title} \n"
-    msg += "```"
+    def make_queue_msg(q):
+        temp = f"the next {len(q)} videos...```\n"
+        for i in q:
+            temp += f"{i.title} \n"
+        temp += "```"
+        return temp
 
-    queue = await context.channel.send(msg)
+    queue = [s for s in playlists[context.guild].queue]
+    msg = await context.channel.send(make_queue_msg(queue[:20]))
 
-    # await queue.add_reaction("◀️")
-    # await queue.add_reaction("▶️")
-    #
-    # def check_back_arrow(emoji, user):
-    #     return emoji == "◀️"
-    # def check_forward_arrow(emoji, user):
-    #     return emoji == "▶️"
-    #
-    # # async with timeout(20):
-    #     # while True:
-    #     #     await asyncio.sleep(.25)
-    #
-    # # reaction, user = await context.bot.wait_for("reaction_add", msg=queue , check=check_back_arrow)
-    # reaction =
-    # print(reaction)
+    if len(queue) < 21:
+        return
+
+    await msg.add_reaction("◀️")
+    await msg.add_reaction("▶️")
+
+    async with timeout(120):
+        x = 0   # floor
+        y = 20  # ceiling
+        while True:
+            try:
+                # credit: https://stackoverflow.com/a/70661168
+                done, pending = await asyncio.wait([
+                    context.bot.loop.create_task(context.bot.wait_for('reaction_remove')),
+                    context.bot.loop.create_task(context.bot.wait_for('reaction_add'))
+                ], return_when=asyncio.FIRST_COMPLETED)
+            except asyncio.exceptions.CancelledError as err:
+                return
+            if not done:
+                continue
+            reaction, user = done.pop().result()
+            if user == context.bot.user or reaction.message != msg:
+                continue
+
+            if reaction.emoji == "▶️":
+                if len(queue) > y:
+                    x += 20
+                    y += 20 if len(queue) > 20 else len(queue)
+                else: # len(queue) == y:
+                    x = 0
+                    y = 20
+                await msg.edit(content=make_queue_msg(queue[x:y]))
+            elif reaction.emoji == "◀️":
+                if x != 0:
+                    y -= y-x
+                    x -= 20
+                else: # x == 0
+                    y = len(queue)
+                    x = y - (20 if (y % 20) == 0 else (y % 20))
+                await msg.edit(content=make_queue_msg(queue[x:y]))
 
 
 # clear queue
@@ -281,3 +313,4 @@ async def clear_queue(context):
     playlists[context.guild].queue = list()
 
     context.voice_client.stop()
+    await context.message.add_reaction("✅")
