@@ -86,19 +86,20 @@ def query(conn, q, values=tuple()):
             k = conn.execute(q).fetchall()
         else:
             k = conn.execute(q, values).fetchall()
-        util.soup_log("[SQL] {q} query {v}".format(q=queryType, v=(values if values else "")))
+        util.soup_log(f"[SQL] {queryType} query {values if values else str()}")
     except sql.OperationalError as e1:
-        util.soup_log("[Error] OperationError on {s} query".format(s=queryType))
-        util.soup_log("Query values: {s}".format(s=values))
+        util.soup_log(f"[Error] OperationError on {queryType} query")
+        util.soup_log(f"Query values: {values}")
         util.soup_log(str(e1.args))
     except sql.IntegrityError as e2:
-        util.soup_log("[Error] IntegrityError on {s} query".format(s=queryType))
-        util.soup_log("Query values: {s}".format(s=values))
+        util.soup_log(f"[Error] IntegrityError on {queryType} query")
+        util.soup_log(f"Query values: {values}")
         util.soup_log(str(e2.args))
     except sql.Error as e3:
-        util.soup_log("[Error] Unknown SQL error on {s} query".format(s=queryType))
-        util.soup_log("Query values: {s}".format(s=values))
+        util.soup_log(f"[Error] Unknown SQL error on {queryType} query")
+        util.soup_log(f"Query values: {values}")
         util.soup_log(str(e3.args))
+
     finally:
         return k
 

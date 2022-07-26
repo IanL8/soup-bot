@@ -24,7 +24,7 @@ async def cmd_help(context):
 # hello
 @commandHandler.command("hello")
 async def hello(context):
-    await context.channel.send("hi {}".format(context.author.display_name))
+    await context.channel.send(f"hi {context.author.display_name}")
 
 
 # true

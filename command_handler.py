@@ -24,7 +24,7 @@ class CommandHandler:
         def decorator(f: callable):
 
             def wrapper(context):
-                util.soup_log("[CMD] {} {}".format(name, context.args if context.args else ""))
+                util.soup_log(f"[CMD] {name} {context.args if context.args else str()}")
                 return f(context)
 
             self.cmds[name] = wrapper

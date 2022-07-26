@@ -36,25 +36,25 @@ class SoupBotClient(discord.Client):
     async def on_ready(self):
         for g in self.guilds:
             if not db.add_guild(g):
-                util.soup_log("[ERROR] {s} could not be added to the db".format(s=g.name))
-        util.soup_log("[BOT] {} has connected to Discord".format(self.user.name))
+                util.soup_log(f"[ERROR] {g.name} could not be added to the db")
+        util.soup_log(f"[BOT] {self.user.name} has connected to Discord")
 
     # on close
     async def close(self):
         for vc in self.voice_clients:
             await vc.disconnect()
         commands.cleanup()
-        util.soup_log("[BOT] {} has disconnected from Discord".format(self.user.name))
+        util.soup_log(f"[BOT] {self.user.name} has disconnected from Discord")
 
     # on guild join
     async def on_guild_join(self, guild):
         if not db.add_guild(guild):
-            util.soup_log("[ERROR] {s} could not be added to the db".format(s=guild.name))
+            util.soup_log(f"[ERROR] {guild.name} could not be added to the db")
 
     # on member join
     async def on_member_join(self, member):
         if not db.add_member(member.id, member.guild.id):
-            util.soup_log("[ERROR] {m}:{i} could not be added to the db".format(m=member.name, i=member.id))
+            util.soup_log(f"[ERROR] {member.name}:{member.id} could not be added to the db")
 
     # on message
     async def on_message(self, message):

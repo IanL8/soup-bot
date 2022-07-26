@@ -104,7 +104,7 @@ async def download_queue_processor():
                         info = ydl.extract_info(url, download=False)
                         playlists[guild].queue.append(Song(info["url"], info["title"]))
                     except yt_dlp.DownloadError as derr:
-                        util.soup_log("[ERROR] {}".format(derr.args))
+                        util.soup_log(f"[ERROR] {derr.args}")
                         asyncio.run_coroutine_threadsafe(channel.send(f"error: invalid link on {url}"), loop)
 
 downloadLoop = asyncio.new_event_loop()
@@ -191,7 +191,7 @@ async def play(context):
             info = ydl.extract_info(url, download=False)
             song = Song(info["url"], info["title"])
         except yt_dlp.DownloadError as derr:
-            util.soup_log("[ERROR] {}".format(derr.args))
+            util.soup_log(f"[ERROR] {derr.args}")
             playlists[context.guild].playing = False
             return await context.channel.send("invalid link")
 

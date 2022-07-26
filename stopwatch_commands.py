@@ -24,10 +24,10 @@ async def start_stopwatch(context):
 
     name = util.list_to_string(context.args, " ")
     if name in stopwatches.keys():
-        msg = "the name *{}* is already in use".format(name)
+        msg = f"the name *{name}* is already in use"
     else:
         stopwatches[name] = Stopwatch(context.author.id, time.time())
-        msg = "stopwatch *{}* started".format(name)
+        msg = f"stopwatch *{name}* started"
 
     await context.channel.send(msg)
 
@@ -40,7 +40,7 @@ async def check_stopwatch(context):
 
     name = util.list_to_string(context.args, " ")
     if name not in stopwatches.keys():
-        msg = "no stopwatch named *{}*".format(name)
+        msg = f"no stopwatch named *{name}*"
     else:
         msg = util.time_to_string(time.time() - stopwatches[name].startTime)
 
@@ -55,13 +55,13 @@ async def stop_stopwatch(context):
 
     name = util.list_to_string(context.args, " ")
     if name not in stopwatches.keys():
-        msg = "no stopwatch named *{}*".format(name)
+        msg = f"no stopwatch named *{name}*"
     elif stopwatches[name].uid != context.author.id:
         msg = "this is not your stopwatch"
     else:
         current = time.time() - stopwatches[name].startTime
         stopwatches.pop(name)
-        msg = "*{}* stopped at {}".format(name, util.time_to_string(current))
+        msg = f"*{name}* stopped at {util.time_to_string(current)}"
 
     await context.channel.send(msg)
 

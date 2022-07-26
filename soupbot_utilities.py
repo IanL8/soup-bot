@@ -45,7 +45,8 @@ def time_to_string(t):
         temp = int(t / i)
         t = t % i
         if temp > 0:
-            s += str(temp) + " " + j + ", "
+            s += f"{temp} {j}, "
+            # s += str(temp) + " " + j + ", "
     if t > 0:
         s += str(int(t)) + " sec"
     else:
@@ -62,7 +63,7 @@ def get_date():
 
 # prints a message s with a timestamp
 def soup_log(s):
-    print("{date}: {msg}".format(date=get_date(), msg=s))
+    print(f"{get_date()}: {s}")
 
 #
 # constants
@@ -86,8 +87,7 @@ MAGIC_8BALL_LIST = ["It is certain.",
                     "My reply is no.",
                     "My sources say no.",
                     "Outlook not so good.",
-                    "Very doubtful."
-                    ]
+                    "Very doubtful."]
 
 WORD_LIST = read_file_to_list("src/word_list.txt")  # list of words from https://www.mit.edu/~ecprice/wordlist.10000
 
