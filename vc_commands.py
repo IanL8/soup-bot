@@ -253,7 +253,7 @@ async def get_queue(context):
         return await context.channel.send("there is no queue")
 
     def make_queue_msg(q):
-        temp = f"the next {len(q)} videos...```\n"
+        temp = f"```\n"
         for i in q:
             temp += f"{i.title} \n"
         temp += "```"
@@ -268,7 +268,7 @@ async def get_queue(context):
     await msg.add_reaction("◀️")
     await msg.add_reaction("▶️")
 
-    async with timeout(120):
+    async with timeout(60):
         x = 0   # floor
         y = 20  # ceiling
         while True:
@@ -278,7 +278,7 @@ async def get_queue(context):
                     context.bot.loop.create_task(context.bot.wait_for('reaction_remove')),
                     context.bot.loop.create_task(context.bot.wait_for('reaction_add'))
                 ], return_when=asyncio.FIRST_COMPLETED)
-            except asyncio.exceptions.CancelledError as err:
+            except asyncio.exceptions.CancelledError:
                 return
             if not done:
                 continue
