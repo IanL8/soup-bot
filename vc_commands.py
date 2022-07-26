@@ -8,6 +8,7 @@ import yt_dlp
 from pytube import Playlist as YTPlaylist
 import os
 from dotenv import load_dotenv
+from math import ceil
 
 #
 # project imports
@@ -119,7 +120,7 @@ def close():
 # bot commands
 
 # join vc
-@commandHandler.command("join", "join vc")
+@commandHandler.command("join", "join vc", "vc")
 async def join(context):
 
     if not context.author.voice:
@@ -131,7 +132,7 @@ async def join(context):
     await context.message.add_reaction("✅")
 
 # leave vc
-@commandHandler.command("leave", "leave vc")
+@commandHandler.command("leave", "leave vc", "vc")
 async def leave(context):
 
     if not context.voice_client in context.bot.voice_clients:
@@ -145,7 +146,7 @@ async def leave(context):
 
 # play audio from a yt vid
 #credit: https://www.youtube.com/watch?v=jHZlvRr9KxM
-@commandHandler.command("play", "play a given youtube video (link) in vc")
+@commandHandler.command("play", "play a given youtube video (link) in vc", "vc")
 async def play(context):
     # if not a youtube link
     url = util.list_to_string(context.args, "")
@@ -158,7 +159,7 @@ async def play(context):
         if context.author.voice:
             await context.author.voice.channel.connect()
         else:
-            return await context.channel.send("user is not in a voice channel")
+            return await context.channel.send("user is not in a voice channel", "vc")
 
     # create a playlist for context.guild if one does not exist already
     if not playlists.get(context.guild):
@@ -208,7 +209,7 @@ async def play(context):
 
 
 # pause vid
-@commandHandler.command("pause", "pause the current video")
+@commandHandler.command("pause", "pause the current video", "vc")
 async def pause(context):
     if not context.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is not in a voice channel")
@@ -221,7 +222,7 @@ async def pause(context):
 
 
 # resume vid
-@commandHandler.command("resume", "resume the current video")
+@commandHandler.command("resume", "resume the current video", "vc")
 async def resume(context):
     if not context.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is not in a voice channel")
@@ -234,7 +235,7 @@ async def resume(context):
 
 
 # skip vid
-@commandHandler.command("skip", "skip the current video")
+@commandHandler.command("skip", "skip the current video", "vc")
 async def skip(context):
     if not context.voice_client in context.bot.voice_clients:
         return await context.channel.send("bot is not in a voice channel")
@@ -247,20 +248,23 @@ async def skip(context):
 
 
 # queue
-@commandHandler.command("queue", "get the video queue")
+@commandHandler.command("queue", "get the video queue", "vc")
 async def get_queue(context):
     if not playlists.get(context.guild) or len(playlists[context.guild].queue) == 0:
         return await context.channel.send("there is no queue")
 
-    def make_queue_msg(q):
-        temp = f"```\n"
+    limit = 20
+    queue = [s for s in playlists[context.guild].queue]
+    maxPages = ceil(len(queue) / limit)
+
+    def make_queue_msg(q, pos: int):
+        temp = f"queue - page ({pos}/{maxPages})```\n"
         for i in q:
             temp += f"{i.title} \n"
         temp += "```"
         return temp
 
-    queue = [s for s in playlists[context.guild].queue]
-    msg = await context.channel.send(make_queue_msg(queue[:20]))
+    msg = await context.channel.send(make_queue_msg(queue[:limit], 1))
 
     if len(queue) < 21:
         return
@@ -270,7 +274,7 @@ async def get_queue(context):
 
     async with timeout(60):
         x = 0   # floor
-        y = 20  # ceiling
+        y = limit  # ceiling
         while True:
             try:
                 # credit: https://stackoverflow.com/a/70661168
@@ -288,24 +292,24 @@ async def get_queue(context):
 
             if reaction.emoji == "▶️":
                 if len(queue) > y:
-                    x += 20
-                    y += 20 if len(queue) > 20 else len(queue)
+                    x += limit
+                    y += limit if len(queue) > limit else len(queue)
                 else: # len(queue) == y:
                     x = 0
-                    y = 20
-                await msg.edit(content=make_queue_msg(queue[x:y]))
+                    y = limit
+                await msg.edit(content=make_queue_msg(queue[x:y], ceil(y / limit)))
             elif reaction.emoji == "◀️":
                 if x != 0:
                     y -= y-x
-                    x -= 20
+                    x -= limit
                 else: # x == 0
                     y = len(queue)
-                    x = y - (20 if (y % 20) == 0 else (y % 20))
-                await msg.edit(content=make_queue_msg(queue[x:y]))
+                    x = y - (limit if (y % limit) == 0 else (y % limit))
+                await msg.edit(content=make_queue_msg(queue[x:y], ceil(y / limit)))
 
 
 # clear queue
-@commandHandler.command("clear_queue", "clears out the video queue")
+@commandHandler.command("clear_queue", "clears out the video queue", "vc")
 async def clear_queue(context):
     if not playlists.get(context.guild) or len(playlists[context.guild].queue) == 0:
         return await context.channel.send("there is no queue")
