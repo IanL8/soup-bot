@@ -168,25 +168,25 @@ def get_flag(gid) -> str:
     return k[0][0]
 
 
-def set_flag(uid, gid, newFlag) -> str:
+def set_flag(uid, gid, newFlag):
     conn = sql.connect("database.db")
 
     # if member is not the guild owner
     k = query(conn, "SELECT gid FROM Guilds WHERE owner_id=?;", (uid,))
     if k == -1:
-        return "[Error] Bad query"
+        return False, "db error"
     if not util.find_in_list(gid, k):
-        return "You do not have the permissions for this command"
+        return False, "you do not have permission to use this command"
 
     # update flag
     k = query(conn, "UPDATE Guilds SET flag=? WHERE gid=?;", (newFlag, gid))
     if k == -1:
-        return "[Error] Bad query"
+        return False, "db error"
 
     # commit transaction and update cache
     conn.commit()
     flags[gid] = newFlag
-    return "Change successful"
+    return True, ""
 
 #
 # commands
@@ -198,71 +198,75 @@ def get_fortune(uid) -> str:
     # if member is not already in UserTimers
     k = query(conn, "SELECT tid FROM UserTimers WHERE uid=?;", (uid,))
     if k == -1:
-        return "[Error] Bad query"
+        return "db error"
     if not util.find_in_list("fortune", k):
         # insert member
         k = query(conn, "INSERT INTO UserTimers (tid, uid) VALUES (?, ?);", ("fortune", uid))
         if k == -1:
-            return "[Error] Bad query"
+            return "db error"
     # else, fetch the last usage of fortune
     else:
         k = query(conn, "SELECT start_time FROM UserTimers WHERE uid=?;", (uid,))
         if k == -1:
-            return "[Error] Bad query"
+            return "db error"
         lastUsage = k[0][0]
 
     # if it has not been 20 hrs since the last use
     t = time.time() - lastUsage
     if t < 72000:
-        return util.time_to_string(72000 - t) + " until next fortune redeem."
+        return f"{util.time_to_string(72000 - t)} until next fortune redeem."
 
     # else, update the table with the current time and return the fortune
     k = query(conn, "UPDATE UserTimers SET start_time=? WHERE uid=?;", (int(time.time()), uid))
     if k == -1:
-        return "[Error] Bad query"
+        return "db error"
 
     conn.commit()
     return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
 
 
-def add_movie(gid, movieName) -> bool:
+def add_movie(gid, movieName):
     conn = sql.connect("database.db")
 
     # if movie is already in Movies
     k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))
-    if k == -1 or util.find_in_list(movieName, k):
-        return False
+    if k == -1:
+        return False, "db error"
+    if util.find_in_list(movieName, k):
+        return False, "movie already in list"
 
     # get next highest priority
     k = query(conn, "SELECT MAX(priority) FROM Movies WHERE gid=?;", (gid, ))
     if k == -1:
-        return False
+        return False, "db error"
     p = 0 if (None, ) in k else k[0][0] + 1  # need to improve the readability of this
 
     # insert new movie into Movies
     k = query(conn, "INSERT INTO Movies (name, gid, priority) VALUES (?, ?, ?);", (movieName, gid, p))
     if k == -1:
-        return False
+        return False, "db error"
 
     conn.commit()
-    return True
+    return True, ""
 
 
-def remove_movie(gid, movieName) -> bool:
+def remove_movie(gid, movieName):
     conn = sql.connect("database.db")
 
     # if movie not in Movies
     k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))  # should improve this
-    if k == -1 or not util.find_in_list(movieName, k):
-        return False
+    if k == -1:
+        return False, "db error"
+    if not util.find_in_list(movieName, k):
+        return False, "movie not in list"
 
     # remove movie from Movies
     k = query(conn, "DELETE FROM Movies WHERE name=? AND gid=?;", (movieName, gid))
     if k == -1:
-        return False
+        return False, "db error"
 
     conn.commit()
-    return True
+    return True, ""
 
 
 def get_movie_list(gid) -> list:

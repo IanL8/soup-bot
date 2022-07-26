@@ -18,6 +18,7 @@ async def cmd_help(context):
     for k, v in commandHandler.cmdInfo.items():
         msg += k + " " * (20 - len(k)) + v + "\n"
     msg += "```"
+
     await context.channel.send(msg)
 
 
@@ -31,6 +32,7 @@ async def hello(context):
 @commandHandler.command("true")
 async def true_lulw(context):
     msg = ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
+
     await context.channel.send(msg)
 
 
@@ -40,6 +42,7 @@ async def roll(context):
     k = 100
     if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
         k = int(context.args[0])
+
     await context.channel.send(str(int(random.random() * k) + 1))
 
 
@@ -58,6 +61,7 @@ async def phrase(context):
     temp = []
     for i in range(k):
         temp.append(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
+
     await context.channel.send(util.list_to_string(temp, " "))
 
 
@@ -66,6 +70,7 @@ async def phrase(context):
 async def magic_8Ball(context):
     if context.author.id == 295323286244687872:
         return await context.channel.send(util.MAGIC_8BALL_LIST[int(random.random() * 10)])
+
     await context.channel.send(random.choice(util.MAGIC_8BALL_LIST))
 
 
@@ -139,13 +144,12 @@ async def add_movie(context):
     if len(context.args) == 0:
         return await context.channel.send("no movie given")
 
-    t = util.list_to_string(context.args)
-    if not db.add_movie(gid, t):
-        msg = "error"
-    else:
-        msg = "done"
+    movie = util.list_to_string(context.args)
+    result = db.add_movie(gid, movie)
+    if not result[0]:
+        return await context.channel.send(result[1])
 
-    await context.channel.send(msg)
+    await context.message.add_reaction("✅")
 
 
 # remove movie
@@ -156,24 +160,25 @@ async def remove_movie(context):
     if len(context.args) == 0:
         return await context.channel.send("no movie given")
 
-    t = util.list_to_string(context.args)
-    if not db.remove_movie(gid, t):
-        msg = "error"
-    else:
-        msg = "done"
+    movie = util.list_to_string(context.args)
+    result = db.remove_movie(gid, movie)
+    if not result[0]:
+        return await context.channel.send(result[1])
 
-    await context.channel.send(msg)
+    await context.message.add_reaction("✅")
 
 # list out the movies
 @commandHandler.command("movies", "list all movies")
 async def movie_list(context):
-    gid = context.guild.id
+    li = db.get_movie_list(context.guild.id)
+    if not li:
+        return await context.channel.send("no movies")
 
-    li = db.get_movie_list(gid)
     temp = "```\n"
     for i in li:
         temp += i[0] + "\n"
     temp += "\n```"
+
     await context.channel.send(temp)
 
 #
@@ -185,8 +190,10 @@ async def set_flag(context):
     if len(context.args) == 0 or len(context.args[0]) < 0 or len(context.args[0]) > 2:
         return await context.channel.send("bad prefix")
 
-    uid = context.author.id
-    gid = context.guild.id
-
     newFlag = context.args[0]
-    await context.channel.send(db.set_flag(uid, gid, newFlag))
+
+    result = db.set_flag(context.author.id, context.guild.id, newFlag)
+    if not result[0]:
+        return await context.channel.send(result[1])
+
+    await context.message.add_reaction("✅")
