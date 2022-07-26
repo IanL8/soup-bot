@@ -24,12 +24,11 @@ async def start_stopwatch(context):
 
     name = util.list_to_string(context.args, " ")
     if name in stopwatches.keys():
-        msg = f"the name *{name}* is already in use"
-    else:
-        stopwatches[name] = Stopwatch(context.author.id, time.time())
-        msg = f"stopwatch *{name}* started"
+        return await context.channel.send(f"the name *{name}* is already in use")
 
-    await context.channel.send(msg)
+    stopwatches[name] = Stopwatch(context.author.id, time.time())
+    await context.message.add_reaction("✅")
+
 
 
 # check stopwatch
@@ -62,16 +61,5 @@ async def stop_stopwatch(context):
         current = time.time() - stopwatches[name].startTime
         stopwatches.pop(name)
         msg = f"*{name}* stopped at {util.time_to_string(current)}"
-
-    await context.channel.send(msg)
-
-
-# get stopwatches
-@commandHandler.command("stopwatches", "list all active stopwatches")
-async def get_stopwatches(context):
-    if len(stopwatches) == 0:
-        msg = "no stopwatches"
-    else:
-        msg = util.list_to_string(stopwatches.keys(), ", ")
 
     await context.channel.send(msg)
