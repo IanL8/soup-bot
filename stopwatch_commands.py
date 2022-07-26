@@ -17,7 +17,7 @@ class Stopwatch:
 
 
 # start stopwatch
-@commandHandler.command("start", "start a stopwatch with a given name")
+@commandHandler.command("start", "start a stopwatch with a given name", "stopwatch")
 async def start_stopwatch(context):
     if len(context.args) == 0:
         return await context.channel.send("no name specified")
@@ -32,7 +32,7 @@ async def start_stopwatch(context):
 
 
 # check stopwatch
-@commandHandler.command("check", "check a stopwatch")
+@commandHandler.command("check", "check a stopwatch", "stopwatch")
 async def check_stopwatch(context):
     if len(context.args) == 0:
         return await context.channel.send("no stopwatch specified")
@@ -47,7 +47,7 @@ async def check_stopwatch(context):
 
 
 # stop stopwatch
-@commandHandler.command("stop", "stop a stopwatch")
+@commandHandler.command("stop", "stop a stopwatch", "stopwatch")
 async def stop_stopwatch(context):
     if len(context.args) == 0:
         return await context.channel.send("no stopwatch specified")

@@ -1,6 +1,8 @@
 #
 # imports
 import random
+import asyncio
+from async_timeout import timeout
 
 #
 # project imports
@@ -14,12 +16,54 @@ import soupbot_utilities as util
 # help
 @commandHandler.command("help")
 async def cmd_help(context):
-    msg = "Commands```\n"
-    for k, v in commandHandler.cmdInfo.items():
-        msg += k + " " * (20 - len(k)) + v + "\n"
-    msg += "```"
+    # msg = "Commands```\n"
+    # for k, v in commandHandler.info.items():
+    #     msg += k + " " * (20 - len(k)) + v + "\n"
+    # msg += "```"
 
-    await context.channel.send(msg)
+    categories = tuple(commandHandler.categories.keys())
+
+    def make_help_page(category, pos: int):
+        temp = f"{category} - page ({pos}/{len(commandHandler.categories)})```\n"
+        for cmd in commandHandler.categories[category]:
+            temp += cmd + " " * (20 - len(cmd)) + commandHandler.info[cmd] + "\n"
+        temp += "```"
+        return temp
+
+    msg = await context.channel.send(make_help_page(categories[0], 1))
+
+    await msg.add_reaction("◀️")
+    await msg.add_reaction("▶️")
+
+    async with timeout(60):
+        i = 0                               # current position
+        k = len(categories) - 1             # last position
+        while True:
+            try:
+                # credit: https://stackoverflow.com/a/70661168
+                done, pending = await asyncio.wait([
+                    context.bot.loop.create_task(context.bot.wait_for('reaction_remove')),
+                    context.bot.loop.create_task(context.bot.wait_for('reaction_add'))
+                ], return_when=asyncio.FIRST_COMPLETED)
+            except asyncio.exceptions.CancelledError:
+                return
+            if not done:
+                continue
+            reaction, user = done.pop().result()
+            if user == context.bot.user or reaction.message != msg:
+                continue
+            if reaction.emoji == "▶️":
+                if i < k:
+                    i += 1
+                else:
+                    i = 0
+                await msg.edit(content=make_help_page(categories[i], i+1))
+            elif reaction.emoji == "◀️":
+                if i > 0:
+                    i -= 1
+                else:
+                    i = k
+                await msg.edit(content=make_help_page(categories[i], i+1))
 
 
 # hello
@@ -137,7 +181,7 @@ async def fortune(context):
 
 
 # add movie
-@commandHandler.command("add", "add a movie to the list")
+@commandHandler.command("add", "add a movie to the list", "movie")
 async def add_movie(context):
     gid = context.guild.id
 
@@ -153,7 +197,7 @@ async def add_movie(context):
 
 
 # remove movie
-@commandHandler.command("remove", "remove a movie from the list")
+@commandHandler.command("remove", "remove a movie from the list", "movie")
 async def remove_movie(context):
     gid = context.guild.id
 
@@ -168,7 +212,7 @@ async def remove_movie(context):
     await context.message.add_reaction("✅")
 
 # list out the movies
-@commandHandler.command("movies", "list all movies")
+@commandHandler.command("movies", "list all movies", "movie")
 async def movie_list(context):
     li = db.get_movie_list(context.guild.id)
     if not li:
@@ -185,7 +229,7 @@ async def movie_list(context):
 # admin commands
 
 # change prefix
-@commandHandler.command("change_prefix", "change the prefix that the bot is accessed with")
+@commandHandler.command("change_prefix", "change the prefix that the bot is accessed with", "admin")
 async def set_flag(context):
     if len(context.args) == 0 or len(context.args[0]) < 0 or len(context.args[0]) > 2:
         return await context.channel.send("bad prefix")

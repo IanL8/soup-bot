@@ -7,8 +7,9 @@ import soupbot_utilities as util
 class CommandHandler:
 
     def __init__(self):
-        self.cmds = dict()
-        self.cmdInfo = dict()
+        self.cmds = dict()          # cmd name -> function pointer
+        self.info = dict()       # cmd name -> info
+        self.categories = dict() # category -> list of cmd names
 
     def is_command(self, c):
         return c in self.cmds.keys()
@@ -19,7 +20,7 @@ class CommandHandler:
     def pass_command(self, c, context):
         return self.cmds[c](context)
 
-    def command(self, name: str, info: str = ""):
+    def command(self, name: str, info: str = "", category: str = "general"):
 
         def decorator(f: callable):
 
@@ -27,8 +28,12 @@ class CommandHandler:
                 util.soup_log(f"[CMD] {name} {context.args if context.args else str()}")
                 return f(context)
 
+            if not self.categories.get(category):
+                self.categories[category] = list()
+
             self.cmds[name] = wrapper
-            self.cmdInfo[name] = info
+            self.info[name] = info
+            self.categories[category].append(name)
 
             return wrapper
 
