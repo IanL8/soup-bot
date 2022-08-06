@@ -1,7 +1,7 @@
 #
 # project imports
 import general_commands
-import stopwatch_commands
+import time_commands
 import vc_commands
 
 #
