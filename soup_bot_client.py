@@ -67,10 +67,13 @@ class SoupBotClient(discord.Client):
             args = message.content.split(" ")
             cmd = args.pop(0)[1:]
             if self.cmdHandler.is_command(cmd):
-                await self.cmdHandler.pass_command(cmd, Context(message,
-                                                                message.channel,
-                                                                message.author,
-                                                                message.guild,
-                                                                message.guild.voice_client,
-                                                                self,
-                                                                args))
+                try:
+                    await self.cmdHandler.pass_command(cmd, Context(message,
+                                                                    message.channel,
+                                                                    message.author,
+                                                                    message.guild,
+                                                                    message.guild.voice_client,
+                                                                    self,
+                                                                    args))
+                except discord.errors.HTTPException:
+                    await message.channel.send("content too large")

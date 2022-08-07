@@ -16,11 +16,6 @@ import soupbot_utilities as util
 # help
 @commandHandler.command("help")
 async def cmd_help(context):
-    # msg = "Commands```\n"
-    # for k, v in commandHandler.info.items():
-    #     msg += k + " " * (20 - len(k)) + v + "\n"
-    # msg += "```"
-
     categories = tuple(commandHandler.categories.keys())
 
     def make_help_page(category, pos: int):
@@ -86,8 +81,12 @@ async def roll(context):
     k = 100
     if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
         k = int(context.args[0])
+    try:
+        num = int(random.random() * k) + 1
+    except OverflowError:
+        num = int(random.random() * 100) + 1
 
-    await context.channel.send(str(int(random.random() * k) + 1))
+    await context.channel.send(num)
 
 
 # word
@@ -97,10 +96,10 @@ async def word(context):
 
 
 # phrase <#>
-@commandHandler.command("phrase", "random string of words of a given size [default 2]")
+@commandHandler.command("phrase", "random string of words of a given size [default 2 | max 100]")
 async def phrase(context):
     k = 2
-    if len(context.args) > 0 and context.args[0].isdigit() and 0 != int(context.args[0]) < 100:
+    if len(context.args) > 0 and context.args[0].isdigit() and 0 != int(context.args[0]) < 101:
         k = int(context.args[0])
     temp = []
     for i in range(k):
@@ -122,7 +121,7 @@ async def magic_8Ball(context):
 @commandHandler.command("lookup", "look up a given league player on op.gg")
 async def lookup(context):
     if len(context.args) == 0:
-        msg = "No name specified."
+        msg = "no name specified"
     else:
         msg = "https://na.op.gg/summoner/userName=" + util.list_to_string(context.args, "")
 
@@ -136,7 +135,7 @@ async def which(context):
     while "" in tempList:
         tempList.remove("")
     if len(tempList) == 0:
-        msg =  "No options specified."
+        msg =  "no options specified"
     else:
         msg = tempList[int(random.random() * len(tempList))]
 
