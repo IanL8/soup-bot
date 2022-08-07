@@ -100,7 +100,7 @@ async def word(context):
 @commandHandler.command("phrase", "random string of words of a given size [default 2]")
 async def phrase(context):
     k = 2
-    if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
+    if len(context.args) > 0 and context.args[0].isdigit() and 0 != int(context.args[0]) < 100:
         k = int(context.args[0])
     temp = []
     for i in range(k):
