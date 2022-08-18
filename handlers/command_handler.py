@@ -38,6 +38,3 @@ class CommandHandler:
             return wrapper
 
         return decorator
-
-
-commandHandler = CommandHandler()

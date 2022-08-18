@@ -12,7 +12,7 @@ from math import ceil
 
 #
 # project imports
-from handlers.command_handler import commandHandler
+from command_categories import commandHandler
 import soupbot_utilities as util
 
 #
