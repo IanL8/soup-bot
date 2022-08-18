@@ -12,13 +12,13 @@ from math import ceil
 
 #
 # project imports
-from command_handler import commandHandler
+from handlers.command_handler import commandHandler
 import soupbot_utilities as util
 
 #
 # globals
 
-load_dotenv("values.env")
+load_dotenv("../values.env")
 FFMPEG_EXE = os.getenv("FFMPEG_EXE")
 
 FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5", "options": "-vn"}

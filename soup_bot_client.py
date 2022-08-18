@@ -5,7 +5,7 @@ import discord
 #
 # project imports
 import commands
-import database_handler as db
+from handlers import database_handler as db
 import soupbot_utilities as util
 
 #

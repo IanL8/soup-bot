@@ -1,8 +1,7 @@
 #
 # project imports
-import general_commands
-import time_commands
-import vc_commands
+from command_categories import general_commands, vc_commands, time_commands
+
 
 #
 # get commandHandler object

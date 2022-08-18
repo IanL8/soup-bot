@@ -5,7 +5,7 @@ import asyncio
 
 #
 # project imports
-from command_handler import commandHandler
+from handlers.command_handler import commandHandler
 import soupbot_utilities as util
 
 #
@@ -105,7 +105,7 @@ async def timer(context):
             num = int(args[i])
             mult = 1
             if i+1 < len(args):
-                i += 1                          # change pos var
+                i += 1                          # increment pos var
                 if args[i].startswith("s"):
                     mult = 1
                 elif args[i].startswith("m"):
@@ -115,11 +115,11 @@ async def timer(context):
                 elif args[i].startswith("d"):
                     mult = 86400
                 else:
-                    i -= 1                      # change pos var
-
+                    i -= 1                      # decrement pos var
             sec += num * mult
-
-        i += 1                                  # change pos var
+        else:
+            return await context.channel.send("invalid time")
+        i += 1                                  # increment pos var
 
     endTime = int(time.time() + sec)
     asyncio.run_coroutine_threadsafe(timer_helper(context.author.id, context.channel, endTime), context.bot.loop)
