@@ -8,8 +8,8 @@ class CommandHandler:
 
     def __init__(self):
         self.cmds = dict()          # cmd name -> function pointer
-        self.info = dict()       # cmd name -> info
-        self.categories = dict() # category -> list of cmd names
+        self.info = dict()          # cmd name -> info
+        self.categories = dict()    # category -> list of cmd names
 
     def is_command(self, c):
         return c in self.cmds.keys()
