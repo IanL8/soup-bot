@@ -12,12 +12,11 @@ from math import ceil
 
 #
 # project imports
-from command_categories import commandHandler
+from commands import commandHandler
 import soupbot_utilities as util
 
 #
 # globals
-
 load_dotenv("values.env")
 FFMPEG_EXE = os.getenv("FFMPEG_EXE")
 

@@ -4,7 +4,7 @@ import discord
 
 #
 # project imports
-import commands
+from commands import *
 from handlers import database_handler as db
 import soupbot_utilities as util
 
@@ -30,7 +30,7 @@ class SoupBotClient(discord.Client):
         # init tables
         db.init()
         # get cmd_handler
-        self.cmdHandler = commands.get_command_handler()
+        self.cmdHandler = command_utilities.get_command_handler()
         # self.cmdHandler.set_bot(self)
 
     # on connection to discord
@@ -44,7 +44,7 @@ class SoupBotClient(discord.Client):
     async def close(self):
         for vc in self.voice_clients:
             await vc.disconnect(force=False)
-        commands.cleanup()
+        command_utilities.cleanup()
         util.soup_log(f"[BOT] {self.user.name} has disconnected from Discord")
 
     # on guild join

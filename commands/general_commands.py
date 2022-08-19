@@ -6,8 +6,7 @@ from async_timeout import timeout
 
 #
 # project imports
-# from handlers.command_handler import commandHandler
-from command_categories import commandHandler
+from commands import commandHandler
 from handlers import database_handler as db
 import soupbot_utilities as util
 
