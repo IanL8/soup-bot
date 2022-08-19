@@ -72,7 +72,7 @@ async def play_next_helper(song, loop, guild, channel, vc):
     await asyncio.sleep(1)
     if loop.is_closed():
         return
-    source = await discord.FFmpegOpusAudio.from_probe(song.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
+    source = await discord.FFmpegOpusAudio.from_probe(song.url, method="fallback", executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
     asyncio.run_coroutine_threadsafe(channel.send(f"now playing...\n```{song.title}```"), loop)
     vc.play(source, after=lambda err: play_next(loop, guild, channel, vc))
 
@@ -199,7 +199,7 @@ async def play(context):
         try:
             if queue:
                 downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
-            source = await discord.FFmpegOpusAudio.from_probe(song.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
+            source = await discord.FFmpegOpusAudio.from_probe(song.url, method="fallback", executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
             await context.channel.send(f"now playing...\n```{song.title}```")
             vc.play(source, after=(lambda err: play_next(context.bot.loop, context.guild, context.channel, vc)))
             await context.message.add_reaction("✅")
