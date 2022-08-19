@@ -140,7 +140,7 @@ async def leave(context):
 
     if playlists.get(context.guild):
         playlists.get(context.guild).queue = list()
-    await context.voice_client.disconnect()
+    await context.voice_client.disconnect(force=False)
     await context.message.add_reaction("✅")
 
 

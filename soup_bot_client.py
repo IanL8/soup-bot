@@ -31,6 +31,7 @@ class SoupBotClient(discord.Client):
         db.init()
         # get cmd_handler
         self.cmdHandler = commands.get_command_handler()
+        # self.cmdHandler.set_bot(self)
 
     # on connection to discord
     async def on_ready(self):
@@ -42,7 +43,7 @@ class SoupBotClient(discord.Client):
     # on close
     async def close(self):
         for vc in self.voice_clients:
-            await vc.disconnect()
+            await vc.disconnect(force=False)
         commands.cleanup()
         util.soup_log(f"[BOT] {self.user.name} has disconnected from Discord")
 
