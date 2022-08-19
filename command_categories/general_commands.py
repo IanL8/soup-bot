@@ -71,7 +71,7 @@ async def hello(context):
 # true
 @commandHandler.command("true")
 async def true_lulw(context):
-    msg = ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:801145828923408453>"
+    msg = ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:1010200083314257960>"
 
     await context.channel.send(msg)
 
