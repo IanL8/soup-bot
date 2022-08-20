@@ -12,7 +12,7 @@ from math import ceil
 
 #
 # project imports
-from commands import commandHandler
+from soup_commands import commandHandler
 import soupbot_utilities as util
 
 #
@@ -116,7 +116,7 @@ def close():
     stopThread = True
 
 #
-# bot commands
+# bot soup_commands
 
 # join vc
 @commandHandler.command("join", "join vc", "vc")
@@ -128,7 +128,7 @@ async def join(context):
         return await context.channel.send("bot is already in a voice channel")
 
     await context.author.voice.channel.connect()
-    await context.message.add_reaction("✅")
+    await context.confirm()
 
 # leave vc
 @commandHandler.command("leave", "leave vc", "vc")
@@ -140,7 +140,7 @@ async def leave(context):
     if playlists.get(context.guild):
         playlists.get(context.guild).queue = list()
     await context.voice_client.disconnect(force=False)
-    await context.message.add_reaction("✅")
+    await context.confirm()
 
 
 # play audio from a yt vid
@@ -171,7 +171,7 @@ async def play(context):
         # if playing
         if playlists[context.guild].playing:
             downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
-            await context.message.add_reaction("✅")
+            await context.confirm()
             return
         else:
             url = queue.pop(0)
@@ -179,7 +179,7 @@ async def play(context):
         # if playing
         if playlists[context.guild].playing:
             downloadQueue.append(([url,], context.bot.loop, context.guild, context.channel))
-            await context.message.add_reaction("✅")
+            await context.confirm()
             return
 
     # play song

@@ -4,9 +4,10 @@ import random
 import asyncio
 from async_timeout import timeout
 
+
 #
 # project imports
-from commands import commandHandler
+from soup_commands import commandHandler
 from handlers import database_handler as db
 import soupbot_utilities as util
 
@@ -25,7 +26,7 @@ async def cmd_help(context):
         temp += "```"
         return temp
 
-    msg = await context.channel.send(make_help_page(categories[0], 1))
+    msg = await context.send_message(make_help_page(categories[0], 1))
 
     await msg.add_reaction("◀️")
     await msg.add_reaction("▶️")
@@ -64,7 +65,7 @@ async def cmd_help(context):
 # hello
 @commandHandler.command("hello")
 async def hello(context):
-    await context.channel.send(f"hi {context.author.display_name}")
+    await context.send_message(f"hi {context.author.display_name}")
 
 
 # true
@@ -72,7 +73,7 @@ async def hello(context):
 async def true_lulw(context):
     msg = ("TRUE" if random.random() > .49 else "NOT FALSE") + " <:LULW:1010200083314257960>"
 
-    await context.channel.send(msg)
+    await context.send_message(msg)
 
 
 # roll <#>
@@ -86,13 +87,13 @@ async def roll(context):
     except OverflowError:
         num = int(random.random() * 100) + 1
 
-    await context.channel.send(num)
+    await context.send_message(num)
 
 
 # word
 @commandHandler.command("word", "random word")
 async def word(context):
-    await context.channel.send(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
+    await context.send_message(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
 
 
 # phrase <#>
@@ -105,7 +106,7 @@ async def phrase(context):
     for i in range(k):
         temp.append(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
 
-    await context.channel.send(util.list_to_string(temp, " "))
+    await context.send_message(util.list_to_string(temp, " "))
 
 
 # 8ball
@@ -114,7 +115,7 @@ async def magic_8Ball(context):
     if context.author.id == 295323286244687872:
         return await context.channel.send(util.MAGIC_8BALL_LIST[int(random.random() * 10)])
 
-    await context.channel.send(random.choice(util.MAGIC_8BALL_LIST))
+    await context.send_message(random.choice(util.MAGIC_8BALL_LIST))
 
 
 # lookup <name>
@@ -125,7 +126,7 @@ async def lookup(context):
     else:
         msg = "https://na.op.gg/summoner/userName=" + util.list_to_string(context.args, "")
 
-    await context.channel.send(msg)
+    await context.send_message(msg)
 
 
 # which <options>
@@ -139,13 +140,13 @@ async def which(context):
     else:
         msg = tempList[int(random.random() * len(tempList))]
 
-    await context.channel.send(msg)
+    await context.send_message(msg)
 
 
 # git
 @commandHandler.command("git")
 async def git(context):
-    await context.channel.send("https://github.com/IanL8/soup-bot")
+    await context.send_message("https://github.com/IanL8/soup-bot")
 
 
 # avatar
@@ -155,18 +156,18 @@ async def get_avatar(context):
     i = None
 
     if len(context.args) == 0:
-        return await context.channel.send(context.author.avatar_url)
+        return await context.send_message(context.author.avatar)
 
     for member in context.guild.members:
         if str(member.nick).lower() == name.lower() or str(member.name).lower() == name.lower():
             i = member.id
 
     if i:
-        msg = str(context.guild.get_member(i).avatar_url)
+        msg = str(context.guild.get_member(i).avatar)
     else:
         msg = "invalid nickname"
 
-    await context.channel.send(msg)
+    await context.send_message(msg)
 
 #
 # database cmds
@@ -176,7 +177,7 @@ async def get_avatar(context):
 async def fortune(context):
     uid = context.author.id
 
-    await context.channel.send(db.get_fortune(uid))
+    await context.send_message(db.get_fortune(uid))
 
 
 # add movie
@@ -185,14 +186,14 @@ async def add_movie(context):
     gid = context.guild.id
 
     if len(context.args) == 0:
-        return await context.channel.send("no movie given")
+        return await context.send_message("no movie given")
 
     movie = util.list_to_string(context.args)
     result = db.add_movie(gid, movie)
     if not result[0]:
-        return await context.channel.send(result[1])
+        return await context.send_message(result[1])
 
-    await context.message.add_reaction("✅")
+    await context.confirm()
 
 
 # remove movie
@@ -201,42 +202,42 @@ async def remove_movie(context):
     gid = context.guild.id
 
     if len(context.args) == 0:
-        return await context.channel.send("no movie given")
+        return await context.send_message("no movie given")
 
     movie = util.list_to_string(context.args)
     result = db.remove_movie(gid, movie)
     if not result[0]:
-        return await context.channel.send(result[1])
+        return await context.send_message(result[1])
 
-    await context.message.add_reaction("✅")
+    await context.confirm()
 
 # list out the movies
 @commandHandler.command("movies", "list all movies", "movie")
 async def movie_list(context):
     li = db.get_movie_list(context.guild.id)
     if not li:
-        return await context.channel.send("no movies")
+        return await context.send_message("no movies")
 
     temp = "```\n"
     for i in li:
         temp += i[0] + "\n"
     temp += "\n```"
 
-    await context.channel.send(temp)
+    await context.send_message(temp)
 
 #
-# admin commands
+# admin soup_commands
 
 # change prefix
 @commandHandler.command("change_prefix", "change the prefix that the bot is accessed with", "admin")
 async def set_flag(context):
     if len(context.args) == 0 or len(context.args[0]) < 0 or len(context.args[0]) > 2:
-        return await context.channel.send("bad prefix")
+        return await context.send_message("bad prefix")
 
     newFlag = context.args[0]
 
     result = db.set_flag(context.author.id, context.guild.id, newFlag)
     if not result[0]:
-        return await context.channel.send(result[1])
+        return await context.send_message(result[1])
 
-    await context.message.add_reaction("✅")
+    await context.confirm()

@@ -5,7 +5,7 @@ import asyncio
 
 #
 # project imports
-from commands import commandHandler
+from soup_commands import commandHandler
 import soupbot_utilities as util
 
 #

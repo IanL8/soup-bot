@@ -189,7 +189,7 @@ def set_flag(uid, gid, newFlag):
     return True, ""
 
 #
-# commands
+# soup_commands
 
 def get_fortune(uid) -> str:
     conn = sql.connect("../database.db")
