@@ -4,22 +4,10 @@ import discord
 
 #
 # project imports
-import commands
+from soup_commands import *
+from soup_commands.context import Context
 from handlers import database_handler as db
 import soupbot_utilities as util
-
-#
-# context
-class Context:
-    # init
-    def __init__(self, message, channel, author, guild, voice_client, bot, args):
-        self.message = message
-        self.channel = channel
-        self.author = author
-        self.guild = guild
-        self.voice_client = voice_client
-        self.bot = bot
-        self.args = args
 
 #
 # soupbot
@@ -30,7 +18,8 @@ class SoupBotClient(discord.Client):
         # init tables
         db.init()
         # get cmd_handler
-        self.cmdHandler = commands.get_command_handler()
+        self.cmdHandler = command_utilities.get_command_handler()
+        # self.cmdHandler.set_bot(self)
 
     # on connection to discord
     async def on_ready(self):
@@ -38,12 +27,16 @@ class SoupBotClient(discord.Client):
             if not db.add_guild(g):
                 util.soup_log(f"[ERROR] {g.name} could not be added to the db")
         util.soup_log(f"[BOT] {self.user.name} has connected to Discord")
+        try:
+            await command_utilities.make_command_tree(self).sync()
+        except discord.errors.ClientException:
+            pass
 
     # on close
     async def close(self):
         for vc in self.voice_clients:
-            await vc.disconnect()
-        commands.cleanup()
+            await vc.disconnect(force=False)
+        command_utilities.cleanup()
         util.soup_log(f"[BOT] {self.user.name} has disconnected from Discord")
 
     # on guild join

@@ -5,7 +5,7 @@ import asyncio
 
 #
 # project imports
-from command_categories import commandHandler
+from soup_commands import commandHandler
 import soupbot_utilities as util
 
 #
@@ -18,24 +18,24 @@ class Stopwatch:
 
 
 # start stopwatch
-@commandHandler.command("watch", "start a stopwatch with a given name", "time")
+@commandHandler.command("stopwatch", "start a stopwatch with a given name", "time", enableInput=True)
 async def start_stopwatch(context):
     if len(context.args) == 0:
-        return await context.channel.send("no name specified")
+        return await context.send_message("no name specified")
 
     name = util.list_to_string(context.args, " ")
     if name in stopwatches.keys():
-        return await context.channel.send(f"the name *{name}* is already in use")
+        return await context.send_message(f"the name *{name}* is already in use")
 
     stopwatches[name] = Stopwatch(context.author.id, time.time())
-    await context.message.add_reaction("✅")
+    await context.confirm()
 
 
 # check stopwatch
-@commandHandler.command("check", "check a stopwatch", "time")
+@commandHandler.command("check", "check a stopwatch", "time", enableInput=True)
 async def check_stopwatch(context):
     if len(context.args) == 0:
-        return await context.channel.send("no stopwatch specified")
+        return await context.send_message("no stopwatch specified")
 
     name = util.list_to_string(context.args, " ")
     if name not in stopwatches.keys():
@@ -43,14 +43,14 @@ async def check_stopwatch(context):
     else:
         msg = util.time_to_string(time.time() - stopwatches[name].startTime)
 
-    await context.channel.send(msg)
+    await context.send_message(msg)
 
 
 # stop stopwatch
-@commandHandler.command("stop", "stop a stopwatch", "time")
+@commandHandler.command("stop", "stop a stopwatch", "time", enableInput=True)
 async def stop_stopwatch(context):
     if len(context.args) == 0:
-        return await context.channel.send("no stopwatch specified")
+        return await context.send_message("no stopwatch specified")
 
     name = util.list_to_string(context.args, " ")
     if name not in stopwatches.keys():
@@ -62,11 +62,11 @@ async def stop_stopwatch(context):
         stopwatches.pop(name)
         msg = f"*{name}* stopped at {util.time_to_string(current)}"
 
-    await context.channel.send(msg)
+    await context.send_message(msg)
 
 
 # get stopwatches created by a user
-@commandHandler.command("get_watches", "get all stopwatches made by the author", "time")
+@commandHandler.command("get_watches", "get all stopwatches made by you", "time")
 async def get_stopwatches(context):
     msg = "```\n"
     flag = False
@@ -77,9 +77,9 @@ async def get_stopwatches(context):
     msg += "```"
 
     if not flag:
-        return await context.channel.send("no stopwatches created by user")
+        return await context.send_message("no stopwatches created by user")
 
-    await context.channel.send(msg)
+    await context.send_message(msg)
 
 #
 # timer
@@ -91,10 +91,10 @@ async def timer_helper(uid, channel, endTime: int):
             return await channel.send(f"<@{uid}>")
 
 # start timer
-@commandHandler.command("timer", "start a timer with a given duration [no commas]", "time")
+@commandHandler.command("timer", "start a timer with a given duration [no commas]", "time", enableInput=True)
 async def timer(context):
     if len(context.args) == 0:
-        return await context.channel.send("no end time specified")
+        return await context.send_message("no end time specified")
 
     # parse end time
     i = 0
@@ -118,9 +118,9 @@ async def timer(context):
                     i -= 1                      # decrement pos var
             sec += num * mult
         else:
-            return await context.channel.send("invalid time")
+            return await context.send_message("invalid time")
         i += 1                                  # increment pos var
 
     endTime = int(time.time() + sec)
     asyncio.run_coroutine_threadsafe(timer_helper(context.author.id, context.channel, endTime), context.bot.loop)
-    await context.message.add_reaction("✅")
+    await context.confirm()
