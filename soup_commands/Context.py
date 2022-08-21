@@ -1,4 +1,8 @@
 #
+# imports
+from discord import Interaction
+
+#
 # context
 class Context:
     # init
@@ -14,17 +18,17 @@ class Context:
         self.args           = args
 
     @staticmethod
-    def copy_from_interaction(interaction):
+    def copy_from_interaction(interaction, msg):
         self = Context()
         self.basic          = False
         self.interaction    = interaction
-        self.message        = interaction.message
+        self.message        = None
         self.channel        = interaction.channel
         self.author         = interaction.user
         self.guild          = interaction.guild
         self.voice_client   = interaction.guild.voice_client
         self.bot            = interaction.client
-        self.args           = None
+        self.args           = msg.split(" ")
 
         return self
 
