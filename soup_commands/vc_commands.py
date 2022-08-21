@@ -123,9 +123,9 @@ def close():
 async def join(context):
 
     if not context.author.voice:
-        return await context.channel.send("user is not in a voice channel")
+        return await context.send_message("user is not in a voice channel")
     elif context.voice_client in context.bot.voice_clients:
-        return await context.channel.send("bot is already in a voice channel")
+        return await context.send_message("bot is already in a voice channel")
 
     await context.author.voice.channel.connect()
     await context.confirm()
@@ -135,7 +135,7 @@ async def join(context):
 async def leave(context):
 
     if not context.voice_client in context.bot.voice_clients:
-        return await context.channel.send("bot is not in a voice channel")
+        return await context.send_message("bot is not in a voice channel")
 
     if playlists.get(context.guild):
         playlists.get(context.guild).queue = list()
@@ -145,12 +145,12 @@ async def leave(context):
 
 # play audio from a yt vid
 #credit: https://www.youtube.com/watch?v=jHZlvRr9KxM
-@commandHandler.command("play", "play a given youtube video (link) in vc", "vc")
+@commandHandler.command("play", "play a given youtube video (link) in vc", "vc", enableInput=True)
 async def play(context):
     # if not a youtube link
     url = util.list_to_string(context.args, "")
     if not ("https://www.youtube.com/" in url or "https://youtu.be/" in url):
-        return await context.channel.send("not a youtube link")
+        return await context.send_message("not a youtube link")
 
     # if bot not in voice
     if not context.guild.voice_client in context.bot.voice_clients:
@@ -158,7 +158,7 @@ async def play(context):
         if context.author.voice:
             await context.author.voice.channel.connect()
         else:
-            return await context.channel.send("user is not in a voice channel", "vc")
+            return await context.send_message("user is not in a voice channel", "vc")
 
     # create a playlist for context.guild if one does not exist already
     if not playlists.get(context.guild):
@@ -171,16 +171,14 @@ async def play(context):
         # if playing
         if playlists[context.guild].playing:
             downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
-            await context.confirm()
-            return
+            return await context.send_message("added to queue")
         else:
             url = queue.pop(0)
     else:
         # if playing
         if playlists[context.guild].playing:
             downloadQueue.append(([url,], context.bot.loop, context.guild, context.channel))
-            await context.confirm()
-            return
+            return await context.send_message("added to queue")
 
     # play song
     with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
@@ -193,15 +191,14 @@ async def play(context):
         except yt_dlp.DownloadError as derr:
             util.soup_log(f"[ERROR] {derr.args}")
             playlists[context.guild].playing = False
-            return await context.channel.send("invalid link")
+            return await context.send_message("invalid link")
 
         try:
             if queue:
                 downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
             source = await discord.FFmpegOpusAudio.from_probe(song.url, method="fallback", executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
-            await context.channel.send(f"now playing...\n```{song.title}```")
             vc.play(source, after=(lambda err: play_next(context.bot.loop, context.guild, context.channel, vc)))
-            await context.message.add_reaction("✅")
+            await context.send_message(f"now playing...\n```{song.title}```")
         except discord.errors.ClientException:
             playlists[context.guild].playing = False
             playlists[context.guild].queue.append(song)
@@ -211,46 +208,46 @@ async def play(context):
 @commandHandler.command("pause", "pause the current video", "vc")
 async def pause(context):
     if not context.voice_client in context.bot.voice_clients:
-        return await context.channel.send("bot is not in a voice channel")
+        return await context.send_message("bot is not in a voice channel")
 
     if not context.voice_client.is_playing():
-        return await context.channel.send("there is no video playing")
+        return await context.send_message("there is no video playing")
 
     context.voice_client.pause()
-    await context.message.add_reaction("✅")
+    await context.confirm()
 
 
 # resume vid
 @commandHandler.command("resume", "resume the current video", "vc")
 async def resume(context):
     if not context.voice_client in context.bot.voice_clients:
-        return await context.channel.send("bot is not in a voice channel")
+        return await context.send_message("bot is not in a voice channel")
 
     if context.voice_client.is_playing():
-        return await context.channel.send("the video is already playing")
+        return await context.send_message("the video is already playing")
 
     context.voice_client.resume()
-    await context.message.add_reaction("✅")
+    await context.confirm()
 
 
 # skip vid
 @commandHandler.command("skip", "skip the current video", "vc")
 async def skip(context):
     if not context.voice_client in context.bot.voice_clients:
-        return await context.channel.send("bot is not in a voice channel")
+        return await context.send_message("bot is not in a voice channel")
 
     if not context.voice_client.is_playing():
-        return await context.channel.send("there is no video playing")
+        return await context.send_message("there is no video playing")
 
     context.voice_client.stop()
-    await context.message.add_reaction("✅")
+    await context.confirm()
 
 
 # queue
 @commandHandler.command("queue", "get the video queue", "vc")
 async def get_queue(context):
     if not playlists.get(context.guild) or len(playlists[context.guild].queue) == 0:
-        return await context.channel.send("there is no queue")
+        return await context.send_message("there is no queue")
 
     limit = 20
     queue = [s for s in playlists[context.guild].queue]
@@ -263,7 +260,7 @@ async def get_queue(context):
         temp += "```"
         return temp
 
-    msg = await context.channel.send(make_queue_msg(queue[:limit], 1))
+    msg = await context.send_message(make_queue_msg(queue[:limit], 1))
 
     if len(queue) < 21:
         return
@@ -311,9 +308,9 @@ async def get_queue(context):
 @commandHandler.command("clear_queue", "clears out the video queue", "vc")
 async def clear_queue(context):
     if not playlists.get(context.guild) or len(playlists[context.guild].queue) == 0:
-        return await context.channel.send("there is no queue")
+        return await context.send_message("there is no queue")
 
     playlists[context.guild].queue = list()
 
     context.voice_client.stop()
-    await context.message.add_reaction("✅")
+    await context.confirm()

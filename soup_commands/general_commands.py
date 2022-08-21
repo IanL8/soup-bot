@@ -4,7 +4,6 @@ import random
 import asyncio
 from async_timeout import timeout
 
-
 #
 # project imports
 from soup_commands import commandHandler
@@ -77,7 +76,7 @@ async def true_lulw(context):
 
 
 # roll <#>
-@commandHandler.command("roll", "roll a dice with the given amount of sides [default 100]")
+@commandHandler.command("roll", "roll a dice with the given amount of sides [default 100]", enableInput=True)
 async def roll(context):
     k = 100
     if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
@@ -110,16 +109,22 @@ async def phrase(context):
 
 
 # 8ball
-@commandHandler.command("8ball")
+@commandHandler.command("8ball", enableInput=True)
 async def magic_8Ball(context):
-    if context.author.id == 295323286244687872:
-        return await context.channel.send(util.MAGIC_8BALL_LIST[int(random.random() * 10)])
+    msg = ""
+    if not context.basic:
+        msg += f"{util.list_to_string(context.args)}\n\n"
 
-    await context.send_message(random.choice(util.MAGIC_8BALL_LIST))
+    if context.author.id == 295323286244687872:
+        msg += f"**{util.MAGIC_8BALL_LIST[int(random.random() * 10)]}**"
+    else:
+        msg += f"*{random.choice(util.MAGIC_8BALL_LIST)}*"
+
+    await context.send_message(msg)
 
 
 # lookup <name>
-@commandHandler.command("lookup", "look up a given league player on op.gg")
+@commandHandler.command("lookup", "look up a given league player on op.gg", enableInput=True)
 async def lookup(context):
     if len(context.args) == 0:
         msg = "no name specified"
@@ -130,7 +135,7 @@ async def lookup(context):
 
 
 # which <options>
-@commandHandler.command("which", "pick between a given set of options (separated by commas)")
+@commandHandler.command("which", "pick between a given set of options (separated by commas)", enableInput=True)
 async def which(context):
     tempList = [s.strip() for s in util.list_to_string(context.args).split(",")]
     while "" in tempList:
@@ -150,7 +155,7 @@ async def git(context):
 
 
 # avatar
-@commandHandler.command("avatar", "fetch a user's profile picture")
+@commandHandler.command("avatar", "fetch a user's profile picture", enableInput=True)
 async def get_avatar(context):
     name = util.list_to_string(context.args, " ")
     i = None
@@ -181,7 +186,7 @@ async def fortune(context):
 
 
 # add movie
-@commandHandler.command("add", "add a movie to the list", "movie")
+@commandHandler.command("add", "add a movie to the list", "movie", enableInput=True)
 async def add_movie(context):
     gid = context.guild.id
 
@@ -197,7 +202,7 @@ async def add_movie(context):
 
 
 # remove movie
-@commandHandler.command("remove", "remove a movie from the list", "movie")
+@commandHandler.command("remove", "remove a movie from the list", "movie", enableInput=True)
 async def remove_movie(context):
     gid = context.guild.id
 
@@ -229,7 +234,7 @@ async def movie_list(context):
 # admin soup_commands
 
 # change prefix
-@commandHandler.command("change_prefix", "change the prefix that the bot is accessed with", "admin")
+@commandHandler.command("change_prefix", "change the prefix that the bot is accessed with", "admin", enableInput=True)
 async def set_flag(context):
     if len(context.args) == 0 or len(context.args[0]) < 0 or len(context.args[0]) > 2:
         return await context.send_message("bad prefix")
