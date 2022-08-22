@@ -1,8 +1,4 @@
 #
-# imports
-from discord import Interaction
-
-#
 # context
 class Context:
     # init

@@ -116,7 +116,7 @@ async def magic_8Ball(context):
         msg += f"{util.list_to_string(context.args)}\n\n"
 
     if context.author.id == 295323286244687872:
-        msg += f"**{util.MAGIC_8BALL_LIST[int(random.random() * 10)]}**"
+        msg += f"*{util.MAGIC_8BALL_LIST[int(random.random() * 10)]}*"
     else:
         msg += f"*{random.choice(util.MAGIC_8BALL_LIST)}*"
 
