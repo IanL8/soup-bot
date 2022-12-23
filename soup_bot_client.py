@@ -4,9 +4,10 @@ import discord
 
 #
 # project imports
-from soup_commands import *
-from soup_commands.context import Context
-from handlers import database_handler as db
+from command_management.context import Context
+from command_management.command_handler import CommandHandler
+from command_blocks import *
+import database_handler as db
 import soupbot_utilities as util
 
 #
@@ -17,9 +18,13 @@ class SoupBotClient(discord.Client):
         super().__init__(**options)
         # init tables
         db.init()
-        # get cmd_handler
-        self.cmdHandler = command_utilities.get_command_handler()
-        # self.cmdHandler.set_bot(self)
+
+        # init cmds
+        self.cmd_handler = CommandHandler()
+
+        cmd_blocks = [general_commands.GeneralCommands(), time_commands.TimeCommands(), vc_commands.MusicCommands()]
+        for b in cmd_blocks:
+            self.cmd_handler.add_block(b)
 
     # on connection to discord
     async def on_ready(self):
@@ -28,15 +33,16 @@ class SoupBotClient(discord.Client):
                 util.soup_log(f"[ERROR] {g.name} could not be added to the db")
         util.soup_log(f"[BOT] {self.user.name} has connected to Discord")
         try:
-            await command_utilities.make_command_tree(self).sync()
+            await self.cmd_handler.make_command_tree(self).sync()
         except discord.errors.ClientException:
-            pass
+            util.soup_log("[BOT] failed to create command tree")
 
     # on close
     async def close(self):
         for vc in self.voice_clients:
             await vc.disconnect(force=False)
-        command_utilities.cleanup()
+
+        self.cmd_handler.close()
         util.soup_log(f"[BOT] {self.user.name} has disconnected from Discord")
 
     # on guild join
@@ -54,19 +60,12 @@ class SoupBotClient(discord.Client):
         if message.author == self.user or len(message.content) == 0:
             return
 
-        flag = message.content[0]
-
-        if db.get_flag(message.guild.id) == flag:
+        if db.get_flag(message.guild.id) == message.content[0]:
             args = message.content.split(" ")
             cmd = args.pop(0)[1:]
-            if self.cmdHandler.is_command(cmd):
+            if self.cmd_handler.is_command(cmd):
+                c = Context(message, message.channel, message.author, message.guild, message.guild.voice_client, self, args)
                 try:
-                    await self.cmdHandler.pass_command(cmd, Context(message,
-                                                                    message.channel,
-                                                                    message.author,
-                                                                    message.guild,
-                                                                    message.guild.voice_client,
-                                                                    self,
-                                                                    args))
+                    await self.cmd_handler.pass_command(cmd, c)
                 except discord.errors.HTTPException:
                     await message.channel.send("content too large")
