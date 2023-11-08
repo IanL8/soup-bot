@@ -1,6 +1,6 @@
-#
-# imports
 import time
+from os import getenv
+from dotenv import load_dotenv
 
 #
 # functions
@@ -39,19 +39,15 @@ def list_to_string(li, sep=" "):
 
 # takes a time t in seconds and gives the time in days, hours, min, sec
 def time_to_string(t):
-    timeUnits = [(86400, "days"), (3600, "hours"), (60, "min")]
+    timeUnits = [(86400, "days"), (3600, "hours"), (60, "min"), (1, "sec")]
     s = ""
     for i, j in timeUnits:
         temp = int(t / i)
         t = t % i
         if temp > 0:
             s += f"{temp} {j}, "
-            # s += str(temp) + " " + j + ", "
-    if t > 0:
-        s += str(int(t)) + " sec"
-    else:
-        s = s[:len(s)-2]
-    return s
+
+    return s[:-2]
 
 
 # returns the current date and time
@@ -67,6 +63,29 @@ def soup_log(s):
 
 #
 # constants
+
+# env
+load_dotenv("values.env")
+TOKEN = getenv("DISCORD_TOKEN")
+FFMPEG_EXE = getenv("FFMPEG_EXE")
+
+FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5", "options": "-vn"}
+
+YDL_OPTIONS = {  # referenced from https://github.com/Rapptz/discord.py/blob/master/examples/basic_voice.py
+    'format': 'bestaudio/best',
+    'postprocessors': [{  # Extract audio using ffmpeg
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'm4a',
+    }],
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0',  # bind to ipv4 since ipv6 addresses cause issues sometimes
+}
 
 MAGIC_8BALL_LIST = ["It is certain.",
                     "It is decidedly so.",
