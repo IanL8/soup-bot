@@ -1,31 +1,26 @@
-#
-# imports
 import time
 import asyncio
 
-#
-# project imports
-from command_management.commands import Commands, CommandBlock
+from command_management import Commands, CommandBlock
 import soupbot_utilities as util
 
-#
-# stopwatch
+
 class Stopwatch:
     def __init__(self, uid, startTime):
         self.uid = uid
         self.startTime = startTime
 
 
-class TimeCommands(CommandBlock):
+class Block(CommandBlock):
 
     name = "time commands"
-    commands = Commands()
+    cmds = Commands()
 
     def __init__(self):
         super().__init__()
         self.stopwatches = dict()
 
-    @commands.command("stopwatch", "start a stopwatch with a given name", enable_input=True)
+    @cmds.command("stopwatch", "start a stopwatch with a given name", enable_input=True)
     async def start_stopwatch(self, context):
         if len(context.args) == 0:
             return await context.send_message("no name specified")
@@ -37,7 +32,7 @@ class TimeCommands(CommandBlock):
         self.stopwatches[name] = Stopwatch(context.author.id, time.time())
         await context.confirm()
 
-    @commands.command("check", "check a stopwatch", enable_input=True)
+    @cmds.command("status", "check a stopwatch", enable_input=True)
     async def check_stopwatch(self, context):
         if len(context.args) == 0:
             return await context.send_message("no stopwatch specified")
@@ -50,7 +45,7 @@ class TimeCommands(CommandBlock):
 
         await context.send_message(msg)
 
-    @commands.command("stop", "stop a stopwatch", enable_input=True)
+    @cmds.command("stop", "stop a stopwatch", enable_input=True)
     async def stop_stopwatch(self, context):
         if len(context.args) == 0:
             return await context.send_message("no stopwatch specified")
@@ -67,7 +62,7 @@ class TimeCommands(CommandBlock):
 
         await context.send_message(msg)
 
-    @commands.command("get_watches", "get all stopwatches made by you")
+    @cmds.command("allstopwatches", "list all of your active stopwatches")
     async def get_stopwatches(self, context):
         msg = "```\n"
         flag = False
@@ -82,6 +77,9 @@ class TimeCommands(CommandBlock):
 
         await context.send_message(msg)
 
+    #
+    # timer
+
     @staticmethod
     async def timer_helper(uid, channel, end_time):
         while True:
@@ -89,7 +87,7 @@ class TimeCommands(CommandBlock):
             if int(time.time()) == end_time:
                 return await channel.send(f"<@{uid}>")
 
-    @commands.command("timer", "start a timer with a given duration [no commas]", enable_input=True)
+    @cmds.command("timer", "start a timer with a given duration [no commas]", enable_input=True)
     async def timer(self, context):
         if len(context.args) == 0:
             return await context.send_message("no end time specified")
