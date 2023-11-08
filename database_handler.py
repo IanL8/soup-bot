@@ -1,23 +1,20 @@
-#
-# imports
 import random
 import sqlite3 as sql
 import time
 
-#
-# project imports
 import soupbot_utilities as util
 
-#
-# globals
+
 flags = dict()
+DATABASE_NAME = "database.db"
 
 #
 # init database
 
 # create tables
-def init() -> bool:
-    conn = sql.connect("database.db")
+# returns true if successful, false otherwise
+def make_tables() -> bool:
+    conn = sql.connect(DATABASE_NAME)
 
     k = query(conn, "CREATE TABLE IF NOT EXISTS Guilds("
                     "gid INTEGER NOT NULL, "
@@ -67,7 +64,7 @@ def init() -> bool:
 # for db queries outside the scope of database_handler
 # creates a connection and commits the transaction
 def request(q, values=tuple()):
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
 
     k = query(conn, q, values)
     if k == -1:
@@ -107,8 +104,9 @@ def query(conn, q, values=tuple()):
 # guilds
 
 # returns true if a guild is added or if the guild is already in the db
+# or false, if there is a database error
 def add_guild(guild) -> bool:
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
     gid = guild.id
 
     # if not already in Guilds
@@ -132,7 +130,7 @@ def add_guild(guild) -> bool:
 
 # returns true if a member is added or if the member is already in the db
 def add_member(uid, gid) -> bool:
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
 
     # if member is not in guild
     k = query(conn, "SELECT uid FROM Users WHERE gid=?", (gid,))
@@ -151,7 +149,7 @@ def add_member(uid, gid) -> bool:
 # flags
 
 def get_flag(gid) -> str:
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
 
     # fetch flag from cache if possible
     if gid in flags.keys():
@@ -169,7 +167,7 @@ def get_flag(gid) -> str:
 
 
 def set_flag(uid, gid, newFlag):
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
 
     # if member is not the guild owner
     k = query(conn, "SELECT gid FROM Guilds WHERE owner_id=?;", (uid,))
@@ -192,7 +190,7 @@ def set_flag(uid, gid, newFlag):
 # a
 
 def get_fortune(uid) -> str:
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
     lastUsage = 0
 
     # if member is not already in UserTimers
@@ -226,7 +224,7 @@ def get_fortune(uid) -> str:
 
 
 def add_movie(gid, movieName):
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
 
     # if movie is already in Movies
     k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))
@@ -251,7 +249,7 @@ def add_movie(gid, movieName):
 
 
 def remove_movie(gid, movieName):
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
 
     # if movie not in Movies
     k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))  # should improve this
@@ -270,7 +268,7 @@ def remove_movie(gid, movieName):
 
 
 def get_movie_list(gid) -> list:
-    conn = sql.connect("database.db")
+    conn = sql.connect(DATABASE_NAME)
 
     # get the movies for guild gid
     k = query(conn, "SELECT name FROM Movies WHERE gid=? ORDER BY priority;", (gid,))
