@@ -1,54 +1,23 @@
-#
-# imports
 import discord
 import asyncio
 from async_timeout import timeout
 import threading
 import yt_dlp
 from pytube import Playlist as YTPlaylist
-import os
-from dotenv import load_dotenv
 from math import ceil
 
-#
-# project imports
-from command_management.commands import Commands, CommandBlock
+from command_management import Commands, CommandBlock
 import soupbot_utilities as util
 
-
 #
-# globals
-load_dotenv("values.env")
-FFMPEG_EXE = os.getenv("FFMPEG_EXE")
+# classes
 
-FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5", "options": "-vn"}
-
-YDL_OPTIONS = {  # referenced from https://github.com/Rapptz/discord.py/blob/master/examples/basic_voice.py
-    'format': 'bestaudio/best',
-    'postprocessors': [{  # Extract audio using ffmpeg
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'm4a',
-    }],
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0',  # bind to ipv4 since ipv6 addresses cause issues sometimes
-}
-
-#
-# objects
-
-# song
 class Song:
     def __init__(self, url, title):
         self.url = url
         self.title = title
 
-# playlist
+
 class Playlist:
     def __init__(self):
         self.queue: [Song] = list()
@@ -60,7 +29,6 @@ playlists = dict() # guild -> playlist
 #
 # helper functions
 
-#play next
 def play_next(loop, guild, channel, vc):
     if len(playlists[guild].queue) == 0:
         playlists[guild].playing = False
@@ -69,11 +37,13 @@ def play_next(loop, guild, channel, vc):
     song = playlists[guild].queue.pop(0)
     asyncio.run(play_next_helper(song, loop, guild, channel, vc))
 
+
 async def play_next_helper(song, loop, guild, channel, vc):
     await asyncio.sleep(1)
     if loop.is_closed():
         return
-    source = await discord.FFmpegOpusAudio.from_probe(song.url, method="fallback", executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
+    source = await discord.FFmpegOpusAudio.from_probe(
+        song.url, method="fallback", executable=util.FFMPEG_EXE, **util.FFMPEG_OPTIONS)
     asyncio.run_coroutine_threadsafe(channel.send(f"now playing...\n```{song.title}```"), loop)
     vc.play(source, after=lambda err: play_next(loop, guild, channel, vc))
 
@@ -96,7 +66,7 @@ async def download_queue_processor():
             return
         if downloadQueue:
             songQueue, loop, guild, channel = downloadQueue.pop(0)
-            with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+            with yt_dlp.YoutubeDL(util.YDL_OPTIONS) as ydl:
                 while songQueue:
                     if not playlists[guild].playing:
                         playlists[guild].queue = list()
@@ -116,27 +86,27 @@ t.start()
 #
 # bot commands
 
-class MusicCommands(CommandBlock):
+class Block(CommandBlock):
 
     name = "music commands"
-    commands = Commands()
+    cmds = Commands()
 
     def close(self):
         global stopThread
         stopThread = True
 
-    @commands.command("join", "join vc")
+    @cmds.command("join", "join vc")
     async def join(self, context):
 
         if not context.author.voice:
             return await context.send_message("user is not in a voice channel")
-        elif context.voice_client in context.bot.voice_clients:
+        elif context.voice_client in context.bot.voice_clients: # look at later
             return await context.send_message("bot is already in a voice channel")
 
         await context.author.voice.channel.connect()
         await context.confirm()
 
-    @commands.command("leave", "leave vc")
+    @cmds.command("leave", "leave vc")
     async def leave(self, context):
 
         if not context.voice_client in context.bot.voice_clients:
@@ -147,9 +117,8 @@ class MusicCommands(CommandBlock):
         await context.voice_client.disconnect(force=False)
         await context.confirm()
 
-    # play audio from a yt vid
-    #credit: https://www.youtube.com/watch?v=jHZlvRr9KxM
-    @commands.command("play", "play a given youtube video (link) in vc", enable_input=True)
+    #ref from: https://www.youtube.com/watch?v=jHZlvRr9KxM
+    @cmds.command("play", "play a given youtube video (link) in vc", enable_input=True)
     async def play(self, context):
         # if not a youtube link
         url = util.list_to_string(context.args, "")
@@ -185,30 +154,32 @@ class MusicCommands(CommandBlock):
                 return await context.send_message("added to queue")
 
         # play song
-        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+        with yt_dlp.YoutubeDL(util.YDL_OPTIONS) as ydl:
             playlists[context.guild].playing = True
             vc = context.guild.voice_client # can't use shortcut
 
+            # get song
             try:
                 info = ydl.extract_info(url, download=False)
                 song = Song(info["url"], info["title"])
             except yt_dlp.DownloadError as derr:
                 util.soup_log(f"[ERROR] {derr.args}")
                 playlists[context.guild].playing = False
-                return await context.send_message("invalid link")
+                return await context.send_message("error: invalid link")
 
+            # play
             try:
                 if queue:
                     downloadQueue.append((queue, context.bot.loop, context.guild, context.channel))
-                source = await discord.FFmpegOpusAudio.from_probe(song.url, method="fallback", executable=FFMPEG_EXE, **FFMPEG_OPTIONS)
+                source = await discord.FFmpegOpusAudio.from_probe(song.url, method="fallback",
+                                                                  executable=util.FFMPEG_EXE, **util.FFMPEG_OPTIONS)
                 vc.play(source, after=(lambda err: play_next(context.bot.loop, context.guild, context.channel, vc)))
                 await context.send_message(f"now playing...\n```{song.title}```")
             except discord.errors.ClientException:
                 playlists[context.guild].playing = False
                 playlists[context.guild].queue.append(song)
 
-
-    @commands.command("pause", "pause the current video")
+    @cmds.command("pause", "pause the current video")
     async def pause(self, context):
         if not context.voice_client in context.bot.voice_clients:
             return await context.send_message("bot is not in a voice channel")
@@ -219,7 +190,7 @@ class MusicCommands(CommandBlock):
         context.voice_client.pause()
         await context.confirm()
 
-    @commands.command("resume", "resume the current video")
+    @cmds.command("resume", "resume the current video")
     async def resume(self, context):
         if not context.voice_client in context.bot.voice_clients:
             return await context.send_message("bot is not in a voice channel")
@@ -230,8 +201,7 @@ class MusicCommands(CommandBlock):
         context.voice_client.resume()
         await context.confirm()
 
-
-    @commands.command("skip", "skip the current video")
+    @cmds.command("skip", "skip the current video")
     async def skip(self, context):
         if not context.voice_client in context.bot.voice_clients:
             return await context.send_message("bot is not in a voice channel")
@@ -242,7 +212,7 @@ class MusicCommands(CommandBlock):
         context.voice_client.stop()
         await context.confirm()
 
-    @commands.command("queue", "get the video queue")
+    @cmds.command("queue", "get the video queue")
     async def get_queue(self, context):
         if not playlists.get(context.guild) or len(playlists[context.guild].queue) == 0:
             return await context.send_message("there is no queue")
@@ -301,7 +271,7 @@ class MusicCommands(CommandBlock):
                         x = y - (limit if (y % limit) == 0 else (y % limit))
                     await msg.edit(content=make_queue_msg(queue[x:y], ceil(y / limit)))
 
-    @commands.command("clear_queue", "clears out the video queue")
+    @cmds.command("clear", "clears out the video queue")
     async def clear_queue(self, context):
         if not playlists.get(context.guild) or len(playlists[context.guild].queue) == 0:
             return await context.send_message("there is no queue")
