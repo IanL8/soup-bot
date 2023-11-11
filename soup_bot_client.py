@@ -60,6 +60,6 @@ class SoupBotClient(discord.Client):
 
             if index != -1:
                 try:
-                    await self.cmd_handler.pass_command(index, cmd, Context(message, self, args))
+                    await self.cmd_handler.pass_command(index, cmd, Context(args, message=message, bot=self))
                 except discord.errors.HTTPException:
                     await message.channel.send("content too large")

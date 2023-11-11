@@ -1,49 +1,40 @@
-from discord import app_commands, Interaction
+from discord import app_commands, Interaction, Message, Client
 
 import soupbot_utilities as util
 
 
 class Context:
-    def __init__(self, message=None, bot=None, args=None):
 
-        self.__basic = True # basic cmd: True, app cmd: False
-        self.__interaction = None
-        self.__message = message
+    def __init__(self, args, message : Message = None, interaction : Interaction = None, bot : Client = None):
 
-        self.bot = bot
-        self.args = args
-
-        if message:
+        if interaction is None:
+            self.__interaction = None
+            self.__message = message
+            self.basic = True # basic cmd: True, app cmd: False
+            self.bot = bot
+            self.args = args
             self.channel = message.channel
             self.author = message.author
             self.guild = message.guild
             self.mentions = message.mentions
             self.voice_client = message.guild.voice_client
         else:
-            self.channel = None
-            self.author = None
-            self.guild = None
-            self.mentions = None
-            self.voice_client = None
+            self.__interaction = interaction
+            self.__message = None
+            self.basic = False
+            self.bot = interaction.client
+            self.args = args
+            self.channel = interaction.channel
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.mentions = []
+            self.voice_client = interaction.guild.voice_client
 
-    @staticmethod
-    def copy_from_interaction(interaction, msg):
-        c = Context()
-        c.__basic = False
-        c.__interaction = interaction
-        c.__message = None
-        c.channel = interaction.channel
-        c.author = interaction.user
-        c.guild = interaction.guild
-        c.mentions = [c.guild.get_member(int(i)) for i in interaction.data["resolved"]["users"].keys()]
-        c.voice_client = interaction.guild.voice_client
-        c.bot = interaction.client
-        c.args = msg.split(" ")
-
-        return c
+            if "resolved" in interaction.data.keys():
+                self.mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["users"].keys()]
 
     async def send_message(self, s):
-        if self.__basic:
+        if self.basic:
             msg = await self.channel.send(s)
         else:
             await self.__interaction.response.send_message(s)
@@ -52,7 +43,7 @@ class Context:
         return msg
 
     async def confirm(self):
-        if self.__basic:
+        if self.basic:
             await self.__message.add_reaction("✅")
         else:
             await self.__interaction.response.send_message("✅")
@@ -61,10 +52,11 @@ class Context:
 class Commands:
 
     def __init__(self):
-        self.cmds       = dict()    # cmd name -> function pointer
-        self.app_cmds   = dict()    # cmd name -> function pointer
+        self.cmds = dict()      # cmd name -> function pointer
+        self.app_cmds = dict()  # cmd name -> function pointer
         self.block = None
 
+    # blocks can't be created until after Commands objects, so must be added in a setter
     def set_block(self, block):
         self.block = block
 
@@ -78,9 +70,14 @@ class Commands:
                 return f(self.block, context)
 
             # app wrapper
-            async def app_wrapper(interaction: Interaction, enter: str):
-                util.soup_log(f"[CMD] {name} {enter if not enter else enter.split()}")
-                return await f(self.block, Context.copy_from_interaction(interaction, enter))
+            if enable_input:
+                async def app_wrapper(interaction: Interaction, enter: str):
+                    util.soup_log(f"[CMD] {name} {enter if not enter else enter.split()}")
+                    return await f(self.block, Context(enter.split(" "), interaction=interaction))
+            else:
+                async def app_wrapper(interaction: Interaction):
+                    util.soup_log(f"[CMD] {name}")
+                    return await f(self.block, Context([], interaction=interaction))
 
             self.cmds[name] = basic_wrapper
             self.app_cmds[name] = app_commands.command(name=name, description=info)(app_wrapper)
@@ -93,7 +90,7 @@ class Commands:
 class CommandBlock:
 
     name: str = "default"
-    cmds : Commands
+    cmds : Commands # each block subclass needs to have its own copy of cmds
 
     def __init__(self):
         self.cmds.set_block(self)
