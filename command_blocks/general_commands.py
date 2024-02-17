@@ -1,4 +1,5 @@
-import random
+from random import random, choice
+from functools import reduce
 
 from command_management import Commands, CommandBlock
 import database_handler as db
@@ -8,86 +9,63 @@ import soupbot_utilities as util
 class Block(CommandBlock):
 
     name = "general commands"
-    cmds = Commands()
+    commands = Commands()
 
-    @cmds.command("hello")
+    @commands.command("hello")
     async def hello(self, context):
         await context.send_message(f"hi {context.author.display_name}")
 
-    @cmds.command("true")
+    @commands.command("true")
     async def truer(self, context):
-        msg = ("TRUE" if random.random() > .49 else "NOT FALSE")
-        await context.send_message(msg)
+        await context.send_message("TRUE" if random() > .49 else "NOT FALSE")
 
-    @cmds.command("roll", info="roll a dice with the given amount of sides [default 100]", enable_input=True)
+    @commands.command("roll", info="roll a dice with the given amount of sides [default 100]", enable_input=True)
     async def roll(self, context):
-        k = 100
-        if len(context.args) > 0 and context.args[0].isdigit() and int(context.args[0]) != 0:
-            k = int(context.args[0])
-        try:
-            num = int(random.random() * k) + 1
-        except OverflowError:
-            num = int(random.random() * 100) + 1
+        sides = 100
+        if len(context.args) > 0 and context.args[0].isdigit() and 1000000000 > int(context.args[0]) > 0:
+            sides = int(context.args[0])
 
-        await context.send_message(num)
+        await context.send_message(int(random() * sides) + 1)
 
-    @cmds.command("word", "random word")
+    @commands.command("word", "random word")
     async def word(self, context):
-        await context.send_message(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
+        await context.send_message(choice(util.WORD_LIST))
 
-    @cmds.command("phrase", "random string of words of a given size [default 2 | max 100]")
+    @commands.command("phrase", "random string of words of a given size [default 2 | max 100]")
     async def phrase(self, context):
-        k = 2
-        if len(context.args) > 0 and context.args[0].isdigit() and 0 != int(context.args[0]) < 101:
-            k = int(context.args[0])
-        temp = []
-        for i in range(k):
-            temp.append(util.WORD_LIST[int(random.random() * len(util.WORD_LIST))])
+        length = 2
+        if len(context.args) > 0 and context.args[0].isdigit() and 0 < int(context.args[0]) < 101:
+            length = int(context.args[0])
 
-        await context.send_message(util.list_to_string(temp, " "))
+        await context.send_message(reduce(lambda x, y: f"{x} {y}", [choice(util.WORD_LIST) for _ in range(length)]))
 
-    @cmds.command("8ball", enable_input=True)
+    @commands.command("8ball", enable_input=True)
     async def magic_8Ball(self, context):
-        msg = ""
-        if not context.basic:
-            msg += f"{util.list_to_string(context.args)}\n\n"
+        prompt = reduce(lambda x, y: f"{x} {y}", context.args) + "\n\n" if not context.is_basic and context.args else ""
+        await context.send_message(prompt + choice(util.MAGIC_8BALL_LIST))
 
-        if context.author.id == 295323286244687872:
-            msg += f"*{util.MAGIC_8BALL_LIST[int(random.random() * 10)]}*"
-        else:
-            msg += f"*{random.choice(util.MAGIC_8BALL_LIST)}*"
-
-        await context.send_message(msg)
-
-    @cmds.command("lookup", "look up a given league player on op.gg", enable_input=True)
+    @commands.command("lookup", "look up a given league player on op.gg", enable_input=True)
     async def lookup(self, context):
         if len(context.args) == 0:
-            msg = "no name specified"
+            return await context.send_message("no name given")
         else:
-            msg = "https://na.op.gg/summoner/userName=" + util.list_to_string(context.args, "")
+            return await context.send_message(
+                "https://na.op.gg/summoners/na/" + reduce(lambda x, y: f"{x}%20{y}", context.args).replace("#", "-")
+            )
 
-        await context.send_message(msg)
-
-    @cmds.command("which", "pick between a given set of options (separated by commas)", enable_input=True)
+    @commands.command("which", "random selection between options that are separated by commas", enable_input=True)
     async def which(self, context):
-        tempList = [s.strip() for s in util.list_to_string(context.args).split(",")]
-        while "" in tempList:
-            tempList.remove("")
-        if len(tempList) == 0:
-            msg =  "no options specified"
-        else:
-            msg = tempList[int(random.random() * len(tempList))]
+        str_args = reduce(lambda x, y: f"{x} {y}", context.args)
+        options = tuple(filter(lambda x: x.strip() != "", str_args.split(",")))
+        await context.send_message(choice(options))
 
-        await context.send_message(msg)
-
-    @cmds.command("git")
+    @commands.command("git")
     async def git(self, context):
         await context.send_message("https://github.com/IanL8/soup-bot")
 
-    @cmds.command("avatar", "fetch a user's profile picture", enable_input=True)
+    @commands.command("avatar", "fetch a user's profile picture", enable_input=True)
     async def get_avatar(self, context):
-
-        if len(context.args) == 0:
+        if not context.args:
             msg = str(context.author.avatar)
         elif len(context.mentions) > 0:
             msg = str(context.mentions[0].avatar)
@@ -96,68 +74,62 @@ class Block(CommandBlock):
 
         await context.send_message(msg)
 
-    #
-    # database commands
-
-    @cmds.command("fortune", "get a random fortune once per day")
+    @commands.command("fortune", "get a random fortune once per day")
     async def fortune(self, context):
-        uid = context.author.id
+        await context.send_message(db.get_fortune(context.author.id))
 
-        await context.send_message(db.get_fortune(uid))
-
-    @cmds.command("add", "add a movie to the list", enable_input=True)
+    @commands.command("add", "add a movie to the list", enable_input=True)
     async def add_movie(self, context):
-        gid = context.guild.id
+        movie = reduce(lambda x, y: f"{x} {y}", context.args)
 
         if len(context.args) == 0:
             return await context.send_message("no movie given")
+        elif db.movies_table_contains(context.guild.id, movie):
+            return await context.send_message("movie already in list")
 
-        movie = util.list_to_string(context.args)
-        result = db.add_movie(gid, movie)
-        if not result[0]:
-            return await context.send_message(result[1])
+        if not db.add_movie(context.guild.id, movie):
+            return await context.send_message("database error while adding movie")
 
         await context.confirm()
 
-    @cmds.command("remove", "remove a movie from the list", enable_input=True)
+    @commands.command("remove", "remove a movie from the list", enable_input=True)
     async def remove_movie(self, context):
-        gid = context.guild.id
+        movie = reduce(lambda x, y: f"{x} {y}", context.args)
 
         if len(context.args) == 0:
             return await context.send_message("no movie given")
+        elif not db.movies_table_contains(context.guild.id, movie):
+            return await context.send_message("movie not in list")
 
-        movie = util.list_to_string(context.args)
-        result = db.remove_movie(gid, movie)
-        if not result[0]:
-            return await context.send_message(result[1])
+        if not db.remove_movie(context.guild.id, movie):
+            return await context.send_message("database error while removing movie")
 
         await context.confirm()
 
-    @cmds.command("movies", "list all movies")
+    @commands.command("movies", "list all movies")
     async def movie_list(self, context):
-        li = db.get_movie_list(context.guild.id)
-        if not li:
+        movies = db.get_movie_list(context.guild.id)
+        if not movies:
             return await context.send_message("no movies")
 
-        temp = "```\n"
-        for i in li:
-            temp += i[0] + "\n"
-        temp += "\n```"
+        msg = "```\n"
+        for m in movies:
+            msg += m + "\n"
+        msg += "\n```"
 
-        await context.send_message(temp)
+        await context.send_message(msg)
 
-    #
-    # admin commands
-
-    @cmds.command("changeprefix", "change the prefix that the bot is accessed with", enable_input=True)
-    async def set_flag(self, context):
+    @commands.command("change_prefix", "change the prefix that the bot is accessed with", enable_input=True)
+    async def set_prefix(self, context):
         if len(context.args) == 0 or len(context.args[0]) < 0 or len(context.args[0]) > 2:
             return await context.send_message("bad prefix")
+        elif not db.is_guild_owner(context.author.id, context.guild.id):
+            return await context.send_message("only the server owner has access to this command")
 
-        newFlag = context.args[0]
+        new_prefix = context.args[0]
 
-        result = db.set_flag(context.author.id, context.guild.id, newFlag)
-        if not result[0]:
-            return await context.send_message(result[1])
+        ret = db.set_prefix(context.guild.id, new_prefix)
+        if not ret:
+            return await context.send_message("database error")
 
-        await context.confirm()
+        return await context.confirm()
