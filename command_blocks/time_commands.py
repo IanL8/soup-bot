@@ -1,122 +1,54 @@
 import time
 import asyncio
+from functools import reduce
 
 from command_management import Commands, CommandBlock
 import soupbot_utilities as util
 
 
-class Stopwatch:
-    def __init__(self, uid, startTime):
-        self.uid = uid
-        self.startTime = startTime
-
-
 class Block(CommandBlock):
 
     name = "time commands"
-    cmds = Commands()
-
-    def __init__(self):
-        super().__init__()
-        self.stopwatches = dict()
-
-    @cmds.command("stopwatch", "start a stopwatch with a given name", enable_input=True)
-    async def start_stopwatch(self, context):
-        if len(context.args) == 0:
-            return await context.send_message("no name specified")
-
-        name = util.list_to_string(context.args, " ")
-        if name in self.stopwatches.keys():
-            return await context.send_message(f"the name *{name}* is already in use")
-
-        self.stopwatches[name] = Stopwatch(context.author.id, time.time())
-        await context.confirm()
-
-    @cmds.command("status", "check a stopwatch", enable_input=True)
-    async def check_stopwatch(self, context):
-        if len(context.args) == 0:
-            return await context.send_message("no stopwatch specified")
-
-        name = util.list_to_string(context.args, " ")
-        if name not in self.stopwatches.keys():
-            msg = f"no stopwatch named *{name}*"
-        else:
-            msg = util.time_to_string(time.time() - self.stopwatches[name].startTime)
-
-        await context.send_message(msg)
-
-    @cmds.command("stop", "stop a stopwatch", enable_input=True)
-    async def stop_stopwatch(self, context):
-        if len(context.args) == 0:
-            return await context.send_message("no stopwatch specified")
-
-        name = util.list_to_string(context.args, " ")
-        if name not in self.stopwatches.keys():
-            msg = f"no stopwatch named *{name}*"
-        elif self.stopwatches[name].uid != context.author.id:
-            msg = "this is not your stopwatch"
-        else:
-            current = time.time() - self.stopwatches[name].startTime
-            self.stopwatches.pop(name)
-            msg = f"*{name}* stopped at {util.time_to_string(current)}"
-
-        await context.send_message(msg)
-
-    @cmds.command("allstopwatches", "list all of your active stopwatches")
-    async def get_stopwatches(self, context):
-        msg = "```\n"
-        flag = False
-        for k, v in self.stopwatches.items():
-            if v.uid == context.author.id:
-                msg += f"{k}\n"
-                flag = True
-        msg += "```"
-
-        if not flag:
-            return await context.send_message("no stopwatches created by user")
-
-        await context.send_message(msg)
-
-    #
-    # timer
+    commands = Commands()
 
     @staticmethod
     async def timer_helper(uid, channel, end_time):
         while True:
-            await asyncio.sleep(.9)
+            await asyncio.sleep(0.9)
             if int(time.time()) == end_time:
                 return await channel.send(f"<@{uid}>")
 
-    @cmds.command("timer", "start a timer with a given duration [no commas]", enable_input=True)
+    @commands.command("timer", "start a timer with the given duration [seconds, minutes, hours, days accepted]", enable_input=True)
     async def timer(self, context):
         if len(context.args) == 0:
-            return await context.send_message("no end time specified")
+            return await context.send_message("no timer duration given")
 
-        # parse end time
-        i = 0
-        sec = 0
-        args = context.args
-        while i < len(args):
-            if args[i].isdigit():
-                num = int(args[i])
-                multi = 1
-                if i+1 < len(args):
-                    i += 1                          # increment pos var
-                    if args[i].startswith("s"):
-                        multi = 1
-                    elif args[i].startswith("m"):
-                        multi = 60
-                    elif args[i].startswith("h"):
-                        multi = 3600
-                    elif args[i].startswith("d"):
-                        multi = 86400
-                    else:
-                        i -= 1                      # decrement pos var
-                sec += num * multi
-            else:
-                return await context.send_message("invalid time")
-            i += 1                                  # increment pos var
+        str_args = reduce(lambda x, y: f"{x}{y}", context.args).lower()
 
-        end_time = int(time.time() + sec)
-        asyncio.run_coroutine_threadsafe(self.timer_helper(context.author.id, context.channel, end_time), context.bot.loop)
+        c_num = ""
+        duration = 0
+
+        for i in range(len(str_args)):
+            if str_args[i].isdigit():
+                c_num += str_args[i]
+            elif str_args[i].isalpha():
+                if c_num == "":
+                    continue
+                elif str_args[i] == "s":
+                    duration += int(c_num)
+                    c_num = ""
+                elif str_args[i] == "m":
+                    duration += 60 * int(c_num)
+                    c_num = ""
+                elif str_args[i] == "h":
+                    duration += 3600 * int(c_num)
+                    c_num = ""
+                elif str_args[i] == "d":
+                    duration += 86400 * int(c_num)
+                    c_num = ""
+
+        asyncio.run_coroutine_threadsafe(
+            self.timer_helper(context.author.id, context.channel, int(time.time() + duration)),
+            context.bot.loop
+        )
         await context.confirm()
