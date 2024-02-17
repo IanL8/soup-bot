@@ -1,279 +1,273 @@
 import random
 import sqlite3 as sql
 import time
+from functools import reduce
 
 import soupbot_utilities as util
 
 
-flags = dict()
-DATABASE_NAME = "database.db"
+#
+# helper functions
+def _one_col_selection_to_tuple(selection):
+    if not selection:
+        return tuple()
+    else:
+        return reduce(lambda x, y: x + y, selection)
 
 #
-# init database
+# core database operations
+def _make_tables():
 
-# create tables
-# returns true if successful, false otherwise
-def make_tables() -> bool:
     conn = sql.connect(DATABASE_NAME)
 
-    k = query(conn, "CREATE TABLE IF NOT EXISTS Guilds("
-                    "gid INTEGER NOT NULL, "
-                    "flag VARCHAR(10) DEFAULT '!', "
-                    "general_chat INTEGER, "
-                    "owner_id INTEGER NOT NULL, "
-                    "PRIMARY KEY (gid) "
-                    ");")
-    if k == -1:
-        return False
-
-    k = query(conn, "CREATE TABLE IF NOT EXISTS Users("
-                    "uid INTEGER NOT NULL, "
-                    "gid INTEGER NOT NULL, "
-                    "FOREIGN KEY(gid) REFERENCES Guilds(gid) ON DELETE CASCADE, "
-                    "PRIMARY KEY (uid, gid) "
-                    ");")
-    if k == -1:
-        return False
-
-    k = query(conn, "CREATE TABLE IF NOT EXISTS UserTimers("
-                    "tid VARCHAR(100) NOT NULL, "
-                    "uid INTEGER NOT NULL, "
-                    "start_time INT DEFAULT 0, "
-                    "FOREIGN KEY(uid) REFERENCES Users(uid) ON DELETE CASCADE, "
-                    "PRIMARY KEY (tid, uid) "
-                    ");")
-    if k == -1:
-        return False
-
-    k = query(conn, "CREATE TABLE IF NOT EXISTS Movies( "
-                    "name VARCHAR(150), "
-                    "gid INTEGER, "
-                    "priority INTEGER DEFAULT 0, "
-                    "PRIMARY KEY (name, gid), "
-                    "FOREIGN KEY (gid) REFERENCES Guilds(gid) ON DELETE CASCADE "
-                    ");")
-    if k == -1:
-        return False
-
+    _query(
+        conn,
+        "CREATE TABLE IF NOT EXISTS Guilds("
+        "gid INTEGER NOT NULL, "
+        "flag VARCHAR(10) DEFAULT '!', "
+        "general_chat INTEGER, "
+        "owner_id INTEGER NOT NULL, "
+        "PRIMARY KEY (gid) "
+        ");"
+    )
+    _query(
+        conn,
+        "CREATE TABLE IF NOT EXISTS Users("
+        "uid INTEGER NOT NULL, "
+        "gid INTEGER NOT NULL, "
+        "FOREIGN KEY(gid) REFERENCES Guilds(gid) ON DELETE CASCADE, "
+        "PRIMARY KEY (uid, gid) "
+        ");"
+    )
+    _query(
+        conn,
+        "CREATE TABLE IF NOT EXISTS UserTimers("
+        "tid VARCHAR(100) NOT NULL, "
+        "uid INTEGER NOT NULL, "
+        "start_time INT DEFAULT 0, "
+        "FOREIGN KEY(uid) REFERENCES Users(uid) ON DELETE CASCADE, "
+        "PRIMARY KEY (tid, uid) "
+        ");"
+    )
+    _query(
+        conn,
+        "CREATE TABLE IF NOT EXISTS Movies( "
+        "name VARCHAR(150), "
+        "gid INTEGER, "
+        "priority INTEGER DEFAULT 0, "
+        "PRIMARY KEY (name, gid), "
+        "FOREIGN KEY (gid) REFERENCES Guilds(gid) ON DELETE CASCADE "
+        ");"
+    )
     conn.commit()
-    return True
 
-#
-# queries
+def _query(conn, query, values=tuple()):
+    """Returns the results of the query or 0 if an exception occurred"""
 
-# for db queries outside the scope of database_handler
-# creates a connection and commits the transaction
-def request(q, values=tuple()):
-    conn = sql.connect(DATABASE_NAME)
+    queryType = query.split(" ")[0]
+    ret = []
 
-    k = query(conn, q, values)
-    if k == -1:
-        return k
-
-    conn.commit()
-    return k
-
-
-# makes a query using the connection, SQL query, and its corresponding values
-def query(conn, q, values=tuple()):
-    k = -1
-    queryType = q.split(" ")[0]
     try:
         if not values:
-            k = conn.execute(q).fetchall()
+            ret = conn.execute(query).fetchall()
         else:
-            k = conn.execute(q, values).fetchall()
+            ret = conn.execute(query, values).fetchall()
         util.soup_log(f"[SQL] {queryType} query {values if values else str()}")
     except sql.OperationalError as e1:
+        ret = 0
         util.soup_log(f"[Error] OperationError on {queryType} query")
         util.soup_log(f"Query values: {values}")
         util.soup_log(str(e1.args))
     except sql.IntegrityError as e2:
+        ret = 0
         util.soup_log(f"[Error] IntegrityError on {queryType} query")
         util.soup_log(f"Query values: {values}")
         util.soup_log(str(e2.args))
     except sql.Error as e3:
+        ret = 0
         util.soup_log(f"[Error] Unknown SQL error on {queryType} query")
         util.soup_log(f"Query values: {values}")
         util.soup_log(str(e3.args))
-
     finally:
-        return k
+        return ret
+
 
 #
-# guilds
+# init database
+DATABASE_NAME = "database.db"
+_make_tables()
 
-# returns true if a guild is added or if the guild is already in the db
-# or false, if there is a database error
-def add_guild(guild) -> bool:
+# small cache - incorporate a more efficient cache if bot scales past more than a few servers
+_prefix_cache = dict()
+
+
+#
+# functions for use by other modules
+
+# guilds, users, and prefixes
+def add_guild(gid, main_chat_id, owner_id, member_ids) -> bool:
+    """Add a guild and its members to db. Returns True if successful, False otherwise"""
+
     conn = sql.connect(DATABASE_NAME)
-    gid = guild.id
 
-    # if not already in Guilds
-    k = query(conn, "SELECT gid FROM Guilds;")
-    if k == -1:
+    # check if already in table
+    ret = _query(conn, "SELECT gid FROM Guilds;")
+    if ret == 0 or gid in _one_col_selection_to_tuple(ret):
         return False
-    if not util.find_in_list(gid, k):
-        # insert guild
-        k = query(conn, "INSERT INTO Guilds (gid, general_chat, owner_id) VALUES (?, ?, ?);",
-                  (gid, guild.text_channels[0].id, guild.owner_id))
-        if k == -1:
-            return False
-        # insert guild members
-        for m in guild.members:
-            if not m.bot:
-                query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (m.id, gid))
+
+    ret = _query(
+        conn,
+        "INSERT INTO Guilds (gid, general_chat, owner_id) VALUES (?, ?, ?);",
+        (gid, main_chat_id, owner_id)
+    )
+    if ret == 0:
+        return False
+
+    for uid in member_ids:
+        _query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (uid, gid))
 
     conn.commit()
     return True
 
-
-# returns true if a member is added or if the member is already in the db
 def add_member(uid, gid) -> bool:
+    """Add a user to the db. Returns True if successful, False otherwise"""
+
     conn = sql.connect(DATABASE_NAME)
 
-    # if member is not in guild
-    k = query(conn, "SELECT uid FROM Users WHERE gid=?", (gid,))
-    if k == -1:
+    # check if already in table
+    ret = _query(conn, "SELECT uid FROM Users WHERE gid=?;", (gid, ))
+    if not ret or uid in _one_col_selection_to_tuple(ret):
         return False
-    if not util.find_in_list(uid, k):
-        # insert member
-        k = query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (uid, gid))
-        if k == -1:
-            return False
+
+    ret = _query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (uid, gid,))
+    if ret == 0: return False
 
     conn.commit()
     return True
 
-#
-# flags
+def is_guild_owner(uid, gid) -> bool:
+    """Returns True if the user is the guild owner, False otherwise"""
 
-def get_flag(gid) -> str:
     conn = sql.connect(DATABASE_NAME)
 
-    # fetch flag from cache if possible
-    if gid in flags.keys():
-        return flags[gid]
+    ret = _query(conn, "SELECT owner_id FROM Guilds WHERE gid=?;", (gid,))
+    if not ret:
+        return False
 
-    # fetch from db
-    k = query(conn, "SELECT flag FROM Guilds WHERE gid=?;", (gid,))
-    if k == -1:
-        return "!"  # default
+    return uid == ret[0][0]
 
-    # add to cache
-    flags[gid] = k[0][0]
+def get_prefix(gid) -> str:
+    """Fetches the command signifier, or prefix, from the db or cache"""
 
-    return k[0][0]
+    if gid in _prefix_cache.keys():
+        return _prefix_cache[gid]
 
-
-def set_flag(uid, gid, newFlag):
     conn = sql.connect(DATABASE_NAME)
 
-    # if member is not the guild owner
-    k = query(conn, "SELECT gid FROM Guilds WHERE owner_id=?;", (uid,))
-    if k == -1:
-        return False, "db error"
-    if not util.find_in_list(gid, k):
-        return False, "you do not have permission to use this command"
+    prefix = "!" # default
+    ret = _query(conn, "SELECT flag FROM Guilds WHERE gid=?;", (gid,))
+    if ret:
+        prefix = ret[0][0]
 
-    # update flag
-    k = query(conn, "UPDATE Guilds SET flag=? WHERE gid=?;", (newFlag, gid))
-    if k == -1:
-        return False, "db error"
+    _prefix_cache[gid] = prefix
+    return prefix
 
-    # commit transaction and update cache
+def set_prefix(gid, new_prefix):
+    """Sets the prefix for the guild to new_prefix. Returns True if successful, False otherwise"""
+
+    conn = sql.connect(DATABASE_NAME)
+
+    ret = _query(conn, "UPDATE Guilds SET flag=? WHERE gid=?;", (new_prefix, gid))
+    if ret == 0:
+        return False
+
     conn.commit()
-    flags[gid] = newFlag
-    return True, ""
+    _prefix_cache[gid] = new_prefix
+    return True
 
-#
-# a
-
+# command support
 def get_fortune(uid) -> str:
+    """Returns a random fortune, time until next usage, or database error if an exception occurs"""
     conn = sql.connect(DATABASE_NAME)
-    lastUsage = 0
+    last_usage_time = 0
 
-    # if member is not already in UserTimers
-    k = query(conn, "SELECT tid FROM UserTimers WHERE uid=?;", (uid,))
-    if k == -1:
-        return "db error"
-    if not util.find_in_list("fortune", k):
-        # insert member
-        k = query(conn, "INSERT INTO UserTimers (tid, uid) VALUES (?, ?);", ("fortune", uid))
-        if k == -1:
-            return "db error"
-    # else, fetch the last usage of fortune
+    ret = _query(conn, "SELECT uid FROM UserTimers WHERE tid=?;", ("fortune",))
+
+    # => if list is empty or uid not in list
+    if not (ret and uid in _one_col_selection_to_tuple(ret)):
+        ret = _query(conn, "INSERT INTO UserTimers (tid, uid) VALUES (?, ?);", ("fortune", uid))
+        if ret == 0:
+            return "database error"
     else:
-        k = query(conn, "SELECT start_time FROM UserTimers WHERE uid=?;", (uid,))
-        if k == -1:
-            return "db error"
-        lastUsage = k[0][0]
+        ret = _query(conn, "SELECT start_time FROM UserTimers WHERE uid=?;", (uid,))
+        if ret == 0:
+            return "database error"
+        last_usage_time = ret[0][0]
 
-    # if it has not been 20 hrs since the last use
-    t = time.time() - lastUsage
-    if t < 72000:
-        return f"{util.time_to_string(72000 - t)} until next fortune redeem."
+    time_since_last_use = time.time() - last_usage_time
+    if time_since_last_use < 72000:
+        return f"{util.time_to_string(72000 - time_since_last_use)} until next fortune redeem."
 
-    # else, update the table with the current time and return the fortune
-    k = query(conn, "UPDATE UserTimers SET start_time=? WHERE uid=?;", (int(time.time()), uid))
-    if k == -1:
-        return "db error"
+    ret = _query(conn, "UPDATE UserTimers SET start_time=? WHERE uid=?;", (int(time.time()), uid))
+    if ret == 0:
+        return "database error"
 
     conn.commit()
     return util.FORTUNES[int(random.random() * len(util.FORTUNES))]
 
+def movies_table_contains(gid, movie):
+    """Returns True if the movie+guild id combination is in the table, False otherwise"""
 
-def add_movie(gid, movieName):
     conn = sql.connect(DATABASE_NAME)
+    ret = _query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))
+    if not ret:
+        return False
 
-    # if movie is already in Movies
-    k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))
-    if k == -1:
-        return False, "db error"
-    if util.find_in_list(movieName, k):
-        return False, "movie already in list"
+    return movie in _one_col_selection_to_tuple(ret)
 
-    # get next highest priority
-    k = query(conn, "SELECT MAX(priority) FROM Movies WHERE gid=?;", (gid, ))
-    if k == -1:
-        return False, "db error"
-    p = 0 if (None, ) in k else k[0][0] + 1  # need to improve the readability of this
+def add_movie(gid, movie):
+    """Adds a movie+guild id to the db. Returns True if successful, False otherwise"""
 
-    # insert new movie into Movies
-    k = query(conn, "INSERT INTO Movies (name, gid, priority) VALUES (?, ?, ?);", (movieName, gid, p))
-    if k == -1:
-        return False, "db error"
+    conn = sql.connect(DATABASE_NAME)
+    priority = 0
+
+    ret = _query(conn, "SELECT MAX(priority) FROM Movies WHERE gid=?;", (gid, ))
+    if ret == 0:
+        return False
+    elif ret[0][0]:
+        priority = ret[0][0] + 1
+
+    ret = _query(
+        conn,
+        "INSERT INTO Movies (name, gid, priority) VALUES (?, ?, ?);",
+        (movie, gid, priority)
+    )
+    if ret == 0:
+        return False
 
     conn.commit()
-    return True, ""
+    return True
 
+def remove_movie(gid, movie):
+    """Removes the movie from the db. Returns True if successful, False otherwise"""
 
-def remove_movie(gid, movieName):
     conn = sql.connect(DATABASE_NAME)
 
-    # if movie not in Movies
-    k = query(conn, "SELECT name FROM Movies WHERE gid=?;", (gid, ))  # should improve this
-    if k == -1:
-        return False, "db error"
-    if not util.find_in_list(movieName, k):
-        return False, "movie not in list"
-
-    # remove movie from Movies
-    k = query(conn, "DELETE FROM Movies WHERE name=? AND gid=?;", (movieName, gid))
-    if k == -1:
-        return False, "db error"
+    ret = _query(conn, "DELETE FROM Movies WHERE name=? AND gid=?;", (movie, gid))
+    if ret == 0:
+        return False
 
     conn.commit()
-    return True, ""
-
+    return True
 
 def get_movie_list(gid) -> list:
+    """Return all movies for the guild"""
+
     conn = sql.connect(DATABASE_NAME)
 
-    # get the movies for guild gid
-    k = query(conn, "SELECT name FROM Movies WHERE gid=? ORDER BY priority;", (gid,))
-    if k == -1:
+    ret = _query(conn, "SELECT name FROM Movies WHERE gid=? ORDER BY priority;", (gid,))
+    if not ret:
         return []
 
     conn.commit()
-    return k
+    return list(_one_col_selection_to_tuple(ret))
