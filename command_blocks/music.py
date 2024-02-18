@@ -125,6 +125,8 @@ class Block(CommandBlock):
         if len(tracks) > 0:
             sessions[context.guild.id].add_tracks(tracks)
 
+        await context.confirm()
+
     @commands.command("shuffle", "shuffles the queue")
     async def shuffle(self, context):
         if not context.guild.id in sessions.keys():
