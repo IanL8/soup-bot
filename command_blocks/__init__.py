@@ -1,2 +1,3 @@
 
-__all__ = ["general_commands", "time_commands", "vc_commands"]
+# only want import all to include modules with CommandBlock objects
+__all__ = ["general", "timer", "music"]
