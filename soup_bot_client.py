@@ -11,21 +11,14 @@ class SoupBotClient(discord.Client):
     def __init__(self, **options):
         super().__init__(**options)
 
-        if not db.make_tables():
-            util.soup_log("[DBS] failed to create tables")
-
-        # initialize command handler and add blocks
         self.cmd_handler = CommandHandler()
-        for b in [general_commands.Block, time_commands.Block, vc_commands.Block]:
-            self.cmd_handler.add_block(b())
+        for cmd_module in [general, music, timer]:
+            self.cmd_handler.add_block(cmd_module.Block())
 
     async def on_ready(self):
-        # add guilds to database
         for g in self.guilds:
-            if not db.add_guild(g):
-                util.soup_log(f"[ERROR] {g.name} could not be added to the db")
+            db.add_guild(g.id, g.text_channels[0].id, g.owner_id, [m.id for m in g.members if not m.bot])
 
-        # sync command tree
         try:
             await self.cmd_handler.make_command_tree(self).sync()
         except discord.errors.ClientException:
@@ -41,25 +34,21 @@ class SoupBotClient(discord.Client):
         util.soup_log(f"[BOT] {self.user.name} has disconnected from Discord")
 
     async def on_guild_join(self, guild):
-        if not db.add_guild(guild):
-            util.soup_log(f"[ERROR] {guild.name} could not be added to the db")
+        db.add_guild(guild.id, guild.text_channels[0].id, guild.owner_id, [m.id for m in guild.members if not m.bot])
 
     async def on_member_join(self, member):
-        if not db.add_member(member.id, member.guild.id):
-            util.soup_log(f"[ERROR] {member.name}:{member.id} could not be added to the db")
+        db.add_member(member.id, member.guild.id)
 
     async def on_message(self, message):
-        if message.author == self.user or len(message.content) == 0:
-            return
+        if not (message.author == self.user or len(message.content) == 0) \
+                and db.get_prefix(message.guild.id) == message.content[0]:
 
-        if db.get_flag(message.guild.id) == message.content[0]:
             args = message.content.split(" ")
             cmd = args.pop(0)[1:]
+            block_index = self.cmd_handler.find_block(cmd)
 
-            index = self.cmd_handler.find_block(cmd)
-
-            if index != -1:
+            if block_index != -1:
                 try:
-                    await self.cmd_handler.pass_command(index, cmd, Context(args, message=message, bot=self))
+                    await self.cmd_handler.pass_command(block_index, cmd, Context(args, message=message, bot=self))
                 except discord.errors.HTTPException:
                     await message.channel.send("content too large")
