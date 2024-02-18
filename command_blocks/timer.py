@@ -3,7 +3,6 @@ import asyncio
 from functools import reduce
 
 from command_management import Commands, CommandBlock
-import soupbot_utilities as util
 
 
 class Block(CommandBlock):
@@ -46,6 +45,9 @@ class Block(CommandBlock):
                 elif str_args[i] == "d":
                     duration += 86400 * int(c_num)
                     c_num = ""
+
+        if duration == 0:
+            return await context.send_message("timer duration must be greater than 0")
 
         asyncio.run_coroutine_threadsafe(
             self.timer_helper(context.author.id, context.channel, int(time.time() + duration)),
