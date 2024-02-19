@@ -1,8 +1,6 @@
 from functools import reduce
 from random import shuffle
-import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
-from pytube import Playlist as YoutubePlaylist
+
 import threading
 from time import sleep
 import asyncio
@@ -10,16 +8,11 @@ from math import ceil
 from async_timeout import timeout
 
 from command_management import Commands, CommandBlock
-import soupbot_utilities as util
-from .music_support import downloader, Session, Track
-
-
-auth_manager = SpotifyClientCredentials(client_id=util.SPOTIPY_CLIENT_ID, client_secret=util.SPOTIPY_CLIENT_SECRET)
-sp = spotipy.Spotify(auth_manager=auth_manager)
+from .music_support import track_downloader, gather_tracks, Session, Track
 
 sessions: {str:Session} = dict()
 
-threading.Thread(target=downloader, args=(lambda: sessions,), daemon=True).start()
+threading.Thread(target=track_downloader, args=(lambda: sessions,), daemon=True).start()
 
 
 class Block(CommandBlock):
@@ -28,8 +21,7 @@ class Block(CommandBlock):
     commands = Commands()
 
     def close(self):
-        for k in sessions.keys():
-            sessions.pop(k)
+        sessions.clear()
 
     @commands.command("join", "join vc")
     async def join(self, context):
@@ -54,18 +46,18 @@ class Block(CommandBlock):
         track = sessions[gid].queue.pop(0)
         sessions[gid].all_tracks.append(track)
         asyncio.run_coroutine_threadsafe(channel.send(f"now playing...\n```{track.name}```"), loop)
-        vc.play(track.audio_source, after=lambda _: Block.play_next(gid, channel, vc, loop))
+        vc.play(track.audio_source(), after=lambda _: Block.play_next(gid, channel, vc, loop))
 
     @staticmethod
     def play_next(gid, channel, vc, loop):
-        if not sessions[gid].queue:
-            if sessions[gid].download_queue:
-                while not sessions[gid].queue: sleep(0.1) # wait for tracks to populate queue from download_queue
+        if not gid in sessions.keys():
+            return
+        elif not sessions[gid].queue:
+            if sessions[gid].streaming_queue:
+                while not sessions[gid].queue: sleep(0.1) # wait for tracks to populate queue from streaming_queue
             elif sessions[gid].loop_all:
-                queue = [t for t in sessions[gid].all_tracks]
-                if sessions[gid].always_shuffle: shuffle(queue)
-                sessions[gid].download_queue = queue
-                while not sessions[gid].queue: sleep(0.1) # wait for tracks to populate queue from download_queue
+                sessions[gid].queue = [t for t in sessions[gid].all_tracks]
+                if sessions[gid].always_shuffle: shuffle(sessions[gid].queue)
             else:
                 sessions[gid].playing = False
                 return
@@ -81,51 +73,28 @@ class Block(CommandBlock):
             else:
                 return await context.send_message("user is not in a voice channel")
 
+        await context.defer_message()
+
         if context.guild.id not in sessions.keys(): sessions[context.guild.id] = Session()
 
-        str_args = reduce(lambda x, y: f"{x} {y}", context.args)
-        tracks = []
-
-        if "spotify.com" in str_args:
-            if "playlist" in str_args:
-                for i in sp.playlist(str_args)["tracks"]["items"]:
-                    artists = ""
-                    for a in i["track"]["artists"]: artists += f"{a['name']} "
-                    tracks.append(Track(i['track']['name'], artists=artists))
-            if "album" in str_args:
-                for i in sp.album(str_args)["tracks"]["items"]:
-                    artists = ""
-                    for a in i["artists"]: artists += f"{a['name']} "
-                    tracks.append(Track(i['name'], artists=artists))
-            if "track" in str_args:
-                track = sp.track(str_args)
-                artists = ""
-                for a in track["artists"]: artists += f"{a['name']} "
-                tracks.append(Track(track['name'], artists=artists))
-        elif "youtube.com" in str_args or "youtu.be" in str_args:
-            if "playlist" in str_args:
-                tracks.extend([Track(url=url) for url in YoutubePlaylist(str_args).video_urls])
-            else:
-                tracks.append(Track(url=str_args))
-        else:
-            tracks.append(Track(name=str_args))
+        tracks = gather_tracks(reduce(lambda x, y: f"{x} {y}", context.args))
+        if not tracks:
+            return await context.send_message("no tracks could be found from url")
 
         if not sessions[context.guild.id].playing:
             sessions[context.guild.id].playing = True
             track = tracks.pop(0)
-            track.stream()
-            await track.make_audio_source()
+            if not track.stream(): return await context.send_message("bad url/search")
             sessions[context.guild.id].all_tracks.append(track)
+            await context.send_message(f"now playing...\n```{track.name}```")
             context.guild.voice_client.play(
-                track.audio_source,
+                track.audio_source(),
                 after=lambda _: self.play_next(context.guild.id, context.channel, context.guild.voice_client, context.bot.loop)
             )
-            await context.send_message(f"now playing...\n```{track.name}```")
+        else:
+            await context.confirm()
 
-        if len(tracks) > 0:
-            sessions[context.guild.id].add_tracks(tracks)
-
-        await context.confirm()
+        if len(tracks) > 0: sessions[context.guild.id].add_tracks(tracks)
 
     @commands.command("shuffle", "shuffles the queue")
     async def shuffle(self, context):
@@ -133,7 +102,7 @@ class Block(CommandBlock):
             return await context.send_message("no session - play a track before using this command")
 
         shuffle(sessions[context.guild.id].queue)
-        shuffle(sessions[context.guild.id].download_queue)
+        shuffle(sessions[context.guild.id].streaming_queue)
         await context.confirm()
 
     @commands.command("always_shuffle", "reshuffles the queue on every loop")
@@ -196,9 +165,7 @@ class Block(CommandBlock):
             return await context.send_message("empty queue")
 
         limit = 20
-        queue = []
-        queue.extend(sessions[context.guild.id].queue)
-        queue.extend(sessions[context.guild.id].download_queue)
+        queue = [track for track in sessions[context.guild.id].queue + sessions[context.guild.id].streaming_queue]
 
         def page(q, page_number):
             header = f"queue - page ({page_number}/{ceil(len(queue) / limit)})```\n"
