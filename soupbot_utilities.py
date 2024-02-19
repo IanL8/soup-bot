@@ -50,24 +50,20 @@ FFMPEG_EXE = getenv("FFMPEG_EXE")
 SPOTIPY_CLIENT_SECRET = getenv("SPOTIPY_CLIENT_SECRET")
 SPOTIPY_CLIENT_ID = getenv("SPOTIPY_CLIENT_ID")
 
-FFMPEG_OPTIONS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5", "options": "-vn"}
 
-YDL_OPTIONS = {  # referenced from https://github.com/Rapptz/discord.py/blob/master/examples/basic_voice.py
-    'format': 'bestaudio/best',
-    'postprocessors': [{  # Extract audio using ffmpeg
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'm4a',
-    }],
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
+YDL_OPTIONS = {
     'quiet': True,
     'no_warnings': True,
-    # 'default_search': 'auto',
-    # 'flat_playlist': True,
-    'source_address': '0.0.0.0',  # bind to ipv4 since ipv6 addresses cause issues sometimes
+    'noplaylist': True,
+    'outtmpl': '%(title)s.%(ext)s',
+    'format': 'bestaudio/best',
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'libopus',
+        'preferredquality': '192',
+    }],
 }
+
 
 MAGIC_8BALL_LIST = ["It is certain.",
                     "It is decidedly so.",
@@ -90,6 +86,8 @@ MAGIC_8BALL_LIST = ["It is certain.",
                     "Outlook not so good.",
                     "Very doubtful."]
 
+
 WORD_LIST = read_file_to_list("src/word_list.txt")  # list of words from https://www.mit.edu/~ecprice/wordlist.10000
+
 
 FORTUNES = read_file_to_list("src/fort.txt")
