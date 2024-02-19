@@ -1,3 +1,6 @@
+# references the discord.py method of creating commands
+# slightly different, though maintains many of the same features
+# done to gain practice making larger scale projects + making python decorators
 from discord import app_commands, Interaction, Message, Client
 
 import soupbot_utilities as util
@@ -5,11 +8,12 @@ import soupbot_utilities as util
 
 class Context:
 
-    def __init__(self, args, message : Message=None, interaction:Interaction=None, bot:Client=None):
+    def __init__(self, args, message:Message=None, interaction:Interaction=None, bot:Client=None):
 
         if interaction is None:
             self._interaction = None
             self._message = message
+            self._deferred = False
             self.is_basic = True
             self.bot = bot
             self.args = args
@@ -17,9 +21,11 @@ class Context:
             self.author = message.author
             self.guild = message.guild
             self.mentions = message.mentions
+
         else:
             self._interaction = interaction
             self._message = None
+            self._deferred = False
             self.is_basic = False
             self.bot = interaction.client
             self.args = args
@@ -31,11 +37,19 @@ class Context:
             if "resolved" in interaction.data.keys():
                 self.mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["users"].keys()]
 
+    async def defer_message(self):
+        if not self.is_basic:
+            await self._interaction.response.defer()
+            self._deferred = True
+
     async def send_message(self, s):
         if self.is_basic:
             msg = await self.channel.send(s)
         else:
-            await self._interaction.response.send_message(s)
+            if self._deferred:
+                await self._interaction.followup.send(s)
+            else:
+                await self._interaction.response.send_message(s)
             msg = await self._interaction.original_response()
 
         return msg
@@ -44,8 +58,10 @@ class Context:
         if self.is_basic:
             await self._message.add_reaction("✅")
         else:
-            await self._interaction.response.send_message("✅")
-
+            if self._deferred:
+                await self._interaction.followup.send("✅")
+            else:
+                await self._interaction.response.send_message("✅")
 
 class Commands:
 
