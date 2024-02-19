@@ -36,7 +36,8 @@ class Block(CommandBlock):
         if not context.guild.voice_client in context.bot.voice_clients:
             return await context.send_message("bot is not in a voice channel")
 
-        sessions.pop(context.guild.id)
+        if context.guild.id in sessions.keys():
+            sessions.pop(context.guild.id)
 
         await context.guild.voice_client.disconnect(force=False)
         await context.confirm()
