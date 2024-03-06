@@ -1,47 +1,17 @@
-import time
 from os import getenv
 from dotenv import load_dotenv
 
-#
-# functions
 
-_TIME_UNITS = [(86400, "days"), (3600, "hours"), (60, "min"), (1, "sec")]
-_DATE_STRING = "{month:02}/{day:02}: {hour:02}:{minute:02}:{sec:02}"
-
-def read_file_to_list(src):
+def _read_file_to_list(file_name):
     temp = []
-    f = open(src)
-    s = f.readline()
-    while len(s) > 0:
-        temp.insert(0, s)
-        s = f.readline().strip()
-    f.close()
+    file = open(file_name)
+    line = file.readline()
+    while len(line) > 0:
+        temp.insert(0, line)
+        line = file.readline().strip()
+    file.close()
     return temp
 
-def time_to_string(t):
-    """Takes a time t in seconds and returns the time in days, hours, min, sec"""
-
-    s = ""
-    for i, j in _TIME_UNITS:
-        temp = int(t / i)
-        t = t % i
-        if temp > 0:
-            s += f"{temp} {j}, "
-
-    return s[:-2]
-
-
-def _get_date():
-    t = time.localtime()
-    return _DATE_STRING.format(month=t[1], day=t[2], hour=t[3], minute=t[4], sec=t[5])
-
-
-def soup_log(s):
-    """prints a message s with a timestamp"""
-    print(f"{_get_date()}: {s}")
-
-#
-# constants
 
 # env
 load_dotenv("values.env")
@@ -87,7 +57,7 @@ MAGIC_8BALL_LIST = ["It is certain.",
                     "Very doubtful."]
 
 
-WORD_LIST = read_file_to_list("src/word_list.txt")  # list of words from https://www.mit.edu/~ecprice/wordlist.10000
+WORD_LIST = _read_file_to_list("rec/word_list.txt")  # list of words from https://www.mit.edu/~ecprice/wordlist.10000
 
 
-FORTUNES = read_file_to_list("src/fort.txt")
+FORTUNES = _read_file_to_list("rec/fort.txt")
