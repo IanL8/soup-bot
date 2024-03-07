@@ -1,0 +1,1 @@
+"""Lists of commands. This package defines the ways in which the user interacts with the discord bot."""

@@ -1,7 +1,7 @@
 from discord import Intents
 
 from soup_bot_client import SoupBotClient
-from soupbot_utilities import TOKEN
+from soupbot_util.constants import TOKEN
 
 
 if __name__ == "__main__":
