@@ -46,10 +46,10 @@ class CommandList(ABC):
 
     def _app_command(self, name, desc, enable_input, f):
         if enable_input:
-            async def app_wrapper(interaction: Interaction, enter: str = None):
-                return await f(self, Context(enter, interaction=interaction))
+            async def app_wrapper(interaction:Interaction, enter:str=None):
+                return await f(self, Context(enter if enter else "", interaction=interaction))
         else:
-            async def app_wrapper(interaction: Interaction):
+            async def app_wrapper(interaction:Interaction):
                 return await f(self, Context("", interaction=interaction))
         return app_commands.command(name=name, description=desc)(app_wrapper)
 
