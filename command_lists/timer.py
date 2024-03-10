@@ -1,13 +1,12 @@
 import time
 import asyncio
 
-from command_management.commands import CommandList, Commands
+from command_management.commands import CommandList, command
 
 
 class TimerCommandList(CommandList):
 
     name = "time commands"
-    commands = Commands()
 
     def on_close(self):
         pass
@@ -44,11 +43,7 @@ class TimerCommandList(CommandList):
                     current_number = ""
         return total_seconds
 
-    @commands.command(
-        "timer",
-        "start a timer with the given duration [seconds, minutes, hours, days]",
-        enable_input=True
-    )
+    @command("timer", desc="start a timer with a duration in [seconds, minutes, hours, days]", enable_input=True)
     async def timer_command(self, context):
         if len(context.content) == 0:
             await context.send_message("no timer duration given")
