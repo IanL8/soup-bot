@@ -52,7 +52,7 @@ class SoupBotClient(discord.Client):
         if len(message.content) == 0 or prefix != message.content[0] or message.author == self.user:
             return
         command_name = message.content.split(" ").pop(0)[1:]
-        index = self.command_handler.find_command_list_index(command_name)
+        index = self.command_handler.command_list_index(command_name)
         if index == -1:
             return
         try:

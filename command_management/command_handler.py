@@ -6,7 +6,7 @@ from soupbot_util.logger import soup_log
 
 
 class CommandHandler:
-    """This class defines how the discord client adds and calls commands."""
+    """Defines how the discord client adds and calls commands."""
 
     def __init__(self):
         self.command_lists : [CommandList] = []
@@ -18,7 +18,7 @@ class CommandHandler:
     def make_command_tree(self, client: Client):
         tree = app_commands.CommandTree(client)
         for command_list in self.command_lists:
-            for app_command in command_list.commands.app:
+            for app_command in command_list.app_commands:
                 tree.add_command(app_command)
         return tree
 
@@ -26,17 +26,11 @@ class CommandHandler:
         for command_list in self.command_lists:
             command_list.on_close()
 
-    def find_command_list_index(self, command_name:str):
+    def command_list_index(self, command_name:str):
         for index, command_list in enumerate(self.command_lists):
-            if command_name in command_list.commands.basic.keys():
+            if command_name in command_list:
                 return index
         return -1
 
-    def list_commands(self):
-        commands = []
-        for command_list in self.command_lists:
-            commands.extend(command_list.commands.basic.keys())
-        return commands
-
     async def pass_command(self, index: int, command_name: str, context: Context):
-        await self.command_lists[index].commands.basic[command_name](context)
+        return await self.command_lists[index](command_name, context)

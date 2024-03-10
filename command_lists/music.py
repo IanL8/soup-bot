@@ -3,7 +3,7 @@ import threading
 import asyncio
 from async_timeout import timeout
 
-from command_management.commands import CommandList, Commands
+from command_management.commands import CommandList, command
 from ._music_support import background_streaming, gather_tracks, Session
 
 
@@ -16,12 +16,11 @@ threading.Thread(target=background_streaming, args=(lambda: _sessions,), daemon=
 class MusicCommandList(CommandList):
 
     name = "music commands"
-    commands = Commands()
 
     def on_close(self):
         _sessions.clear()
 
-    @commands.command("join", "join vc")
+    @command("join", desc="join vc")
     async def join(self, context):
         if not context.author.voice:
             await context.send_message("user is not in a voice channel")
@@ -29,7 +28,7 @@ class MusicCommandList(CommandList):
             await context.author.voice.channel.connect()
             await context.confirm()
 
-    @commands.command("leave", "leave vc")
+    @command("leave", desc="leave vc")
     async def leave(self, context):
         if not context.guild.voice_client in context.bot.voice_clients:
             await context.send_message("bot is not in a voice channel")
@@ -40,7 +39,7 @@ class MusicCommandList(CommandList):
             await context.guild.voice_client.disconnect(force=False)
             await context.confirm()
 
-    @commands.command("play", "play audio in vc", enable_input=True)
+    @command("play", desc="play audio in vc", enable_input=True)
     async def play(self, context):
         in_vc = True
         if not context.guild.voice_client in context.bot.voice_clients:
@@ -81,7 +80,7 @@ class MusicCommandList(CommandList):
         if tracks and len(tracks) > 0:
             _sessions[context.guild.id].add_tracks(tracks)
 
-    @commands.command("shuffle", "shuffles the queue")
+    @command("shuffle", desc="shuffles the queue")
     async def shuffle(self, context):
         if not context.guild.id in _sessions.keys():
             await context.send_message("no session - play a track before using this command")
@@ -89,7 +88,7 @@ class MusicCommandList(CommandList):
             _sessions[context.guild.id].shuffle()
             await context.confirm()
 
-    @commands.command("always_shuffle", "reshuffles the queue after every loop")
+    @command("always-shuffle", desc="reshuffles the queue after every loop")
     async def always_shuffle(self, context):
         if not context.guild.id in _sessions.keys():
             await context.send_message("no session - play a track before using this command")
@@ -100,7 +99,7 @@ class MusicCommandList(CommandList):
             _sessions[context.guild.id].always_shuffle = True
             await context.send_message("always shuffle enabled")
 
-    @commands.command("loop", "toggles the looping of queue")
+    @command("loop", desc="toggles the looping of queue")
     async def loop_queue(self, context):
         if not context.guild.id in _sessions.keys():
             await context.send_message("no session - play a track before using this command")
@@ -111,7 +110,7 @@ class MusicCommandList(CommandList):
             _sessions[context.guild.id].loop_all = True
             await context.send_message("looping enabled")
 
-    @commands.command("pause", "pause the current track")
+    @command("pause", desc="pause the current track")
     async def pause(self, context):
         if not context.guild.voice_client in context.bot.voice_clients:
             await context.send_message("bot is not in a voice channel")
@@ -121,7 +120,7 @@ class MusicCommandList(CommandList):
             context.guild.voice_client.pause()
             await context.confirm()
 
-    @commands.command("resume", "resume the current track")
+    @command("resume", desc="resume the current track")
     async def resume(self, context):
         if not context.guild.voice_client in context.bot.voice_clients:
             await context.send_message("bot is not in a voice channel")
@@ -131,7 +130,7 @@ class MusicCommandList(CommandList):
             context.guild.voice_client.resume()
             await context.confirm()
 
-    @commands.command("skip", "skip the current track")
+    @command("skip", desc="skip the current track")
     async def skip(self, context):
         if not context.guild.voice_client in context.bot.voice_clients:
             await context.send_message("bot is not in a voice channel")
@@ -148,7 +147,7 @@ class MusicCommandList(CommandList):
             body += f"{track.name}\n"
         return f"{header}{body}```"
 
-    @commands.command("queue", "display the queue")
+    @command("queue", desc="display the queue")
     async def get_queue(self, context):
         if not context.guild.id in _sessions.keys() or len(_sessions[context.guild.id].queue) == 0:
             await context.send_message("empty queue")
