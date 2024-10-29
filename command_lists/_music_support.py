@@ -2,11 +2,12 @@ from time import sleep
 import asyncio
 from random import shuffle
 from functools import reduce
+
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+
 import yt_dlp
 from pytube import Playlist as YoutubePlaylist
-from pytube import Search
 from discord import FFmpegOpusAudio
 
 from soupbot_util.constants import SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, YDL_OPTIONS, FFMPEG_EXE
@@ -19,6 +20,8 @@ sp = spotipy.Spotify(auth_manager=auth_manager)
 
 class Track:
 
+    _AVOIDED_TERMS = ["react", "cover", "live"]
+
     def __init__(self, name=None, album="", artists="", url=None):
         self.name = name
         self.album = album
@@ -26,31 +29,26 @@ class Track:
         self.url = url
         self.stream_url = ""
 
-    def _find_best_result(self, results) -> str:
-        if len(results) == 0:
-            return ""
+    def _find_best_result(self, entries) -> int:
+        for i in range(0, len(entries)):
+            if not any(term in entries[i]["title"].lower() for term in self._AVOIDED_TERMS if term not in self.name.lower()):
+                return i
 
-        avoided_terms = ["react", "cover", "live"]
-        best_result = None
-        first_result = results[0]
-        while not best_result and len(results) > 0:
-            result = results.pop(0)
-            # the best result is the first result without any avoided terms
-            # normally avoided terms are permitted if they are in the name of the track
-            if not any(term in result.title.lower() for term in avoided_terms if term not in self.name.lower()):
-                best_result = result
-
-        if not best_result:
-            best_result = first_result  # default if no quality results are found
-
-        return best_result.watch_url
+        return 0
 
     def stream(self):
         with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-            if not self.url:
-                self.url = self._find_best_result(Search(f"intitle:'{self.name}' {self.album} {self.artists}").results)
             try:
-                info = ydl.extract_info(self.url, download=False)
+                if not self.url:
+                    entries = ydl.extract_info(f"ytsearch5:'{self.name}' {self.album} {self.artists}", download=False)["entries"]
+                    if len(entries) == 0:
+                        return False
+
+                    info = entries[self._find_best_result(entries)]
+
+                else:
+                    info = ydl.extract_info(self.url, download=False)
+
             except yt_dlp.utils.YoutubeDLError as e:
                 soup_log(f"{e}","err")
                 return False
