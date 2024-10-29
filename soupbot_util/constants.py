@@ -23,6 +23,8 @@ SPOTIPY_CLIENT_ID = getenv("SPOTIPY_CLIENT_ID")
 
 YDL_OPTIONS = {
     'quiet': True,
+    'usenetrc': True,
+    'netrc_location': './.netrc',
     'no_warnings': True,
     'noplaylist': True,
     'outtmpl': '%(title)s.%(ext)s',
