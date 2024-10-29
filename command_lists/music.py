@@ -141,7 +141,7 @@ class MusicCommandList(CommandList):
 
     @staticmethod
     def _page(queue, page_number):
-        header = f"queue - page ({page_number}/{ceil(len(queue) / _DISPLAY_LIMIT)}```\n"
+        header = f"queue - page ({page_number}/{ceil(len(queue) / _DISPLAY_LIMIT)})```\n" # TODO give the proper # of pages
         body = ""
         for track in queue:
             body += f"{track.name}\n"
