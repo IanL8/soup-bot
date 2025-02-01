@@ -3,14 +3,8 @@ from dotenv import load_dotenv
 
 
 def _read_file_to_list(file_name):
-    temp = []
-    file = open(file_name)
-    line = file.readline()
-    while len(line) > 0:
-        temp.insert(0, line)
-        line = file.readline().strip()
-    file.close()
-    return temp
+    with open(file_name) as file:
+        return [x.strip() for x in file.read().split("\n") if len(x.strip()) > 0]
 
 
 # env
@@ -59,7 +53,7 @@ MAGIC_8BALL_LIST = ["It is certain.",
                     "Very doubtful."]
 
 
-WORD_LIST = _read_file_to_list("rec/word_list.txt")  # list of words from https://www.mit.edu/~ecprice/wordlist.10000
+WORD_LIST = _read_file_to_list("rec/word_list.txt")
 
 
-FORTUNES = _read_file_to_list("rec/fort.txt")
+FORTUNES = _read_file_to_list("rec/fortunes.txt")
