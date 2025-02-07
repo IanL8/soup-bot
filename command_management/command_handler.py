@@ -17,12 +17,14 @@ class CommandHandler:
 
     def make_command_tree(self, client: Client):
         tree = app_commands.CommandTree(client)
+
         for command_list in self.command_lists:
             for app_command in command_list.app_commands:
                 tree.add_command(app_command)
+
         return tree
 
-    def on_close(self):
+    def close(self):
         for command_list in self.command_lists:
             command_list.on_close()
 
@@ -30,6 +32,7 @@ class CommandHandler:
         for index, command_list in enumerate(self.command_lists):
             if command_name in command_list:
                 return index
+
         return -1
 
     async def pass_command(self, index: int, command_name: str, context: Context):

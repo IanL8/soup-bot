@@ -8,7 +8,7 @@ def _read_file_to_list(file_name):
 
 
 # env
-load_dotenv("values.env")
+load_dotenv("resources/values.env")
 TOKEN = getenv("DISCORD_TOKEN")
 FFMPEG_EXE = getenv("FFMPEG_EXE")
 SPOTIPY_CLIENT_SECRET = getenv("SPOTIPY_CLIENT_SECRET")
@@ -18,7 +18,7 @@ SPOTIPY_CLIENT_ID = getenv("SPOTIPY_CLIENT_ID")
 YDL_OPTIONS = {
     'quiet': True,
     'usenetrc': True,
-    'cookiefile': './cookies.txt',
+    'cookiefile': './resources/cookies.txt',
     'no_warnings': True,
     'noplaylist': True,
     'outtmpl': '%(title)s.%(ext)s',
@@ -53,7 +53,7 @@ MAGIC_8BALL_LIST = ["It is certain.",
                     "Very doubtful."]
 
 
-WORD_LIST = _read_file_to_list("rec/word_list.txt")
+WORD_LIST = _read_file_to_list("resources/word_list.txt")
 
 
-FORTUNES = _read_file_to_list("rec/fortunes.txt")
+FORTUNES = _read_file_to_list("resources/fortunes.txt")

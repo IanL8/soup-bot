@@ -38,6 +38,7 @@ class CommandList(ABC):
     def __init__(self):
         self._basic_commands: {str:callable} = dict()
         self.app_commands: [callable] = []
+
         for value in self.__class__.__dict__.values():
             if value in _all_commands.keys():
                 cmd = _all_commands.pop(value)
@@ -48,14 +49,17 @@ class CommandList(ABC):
         if enable_input:
             async def app_wrapper(interaction:Interaction, enter:str=None):
                 return await f(self, Context(enter if enter else "", interaction=interaction))
+
         else:
             async def app_wrapper(interaction:Interaction):
                 return await f(self, Context("", interaction=interaction))
+
         return app_commands.command(name=name, description=desc)(app_wrapper)
 
     async def __call__(self, command_name, context):
         if command_name not in self._basic_commands.keys():
             return None
+
         return await self._basic_commands[command_name](self, context)
 
     def __contains__(self, item):
