@@ -29,6 +29,7 @@ class Context:
             self.author = interaction.user
             self.guild = interaction.guild
             self.mentions = []
+
             if "resolved" in interaction.data.keys():
                 self.mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["users"].keys()]
 
@@ -49,6 +50,7 @@ class Context:
             await self._interaction.followup.send(text)
         else:
             await self._interaction.response.send_message(text)
+
         return await self._interaction.original_response()
 
     async def confirm(self):

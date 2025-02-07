@@ -101,18 +101,22 @@ class Session:
             if self.streaming_queue:
                 while not self.queue:
                     sleep(0.1) # wait for tracks to populate queue from streaming_queue
+
             elif self.loop_all:
                 self.queue = [t for t in self.all_tracks]
                 if self.always_shuffle:
                     self.shuffle()
+
             else:
                 self.playing = False
+
         if self.playing:
             asyncio.run(self._play_next_coro(channel, vc, loop))
 
 
 def gather_tracks(text):
     tracks = []
+
     if "spotify.com" in text:
         try:
             if "playlist" in text:
@@ -126,28 +130,35 @@ def gather_tracks(text):
                 items = [(track, track["album"]["name"]),]
             else:
                 return None
+
         except spotipy.SpotifyException as e:
             soup_log(f"{e}", "err")
             return None
+
         for track, album_name in items:
             artists = reduce(lambda x, y: f"{x} {y}", (artist["name"] for artist in track["artists"]))
             tracks.append(Track(track["name"], album=album_name, artists=artists))
+
     elif "youtube.com" in text or "youtu.be" in text:
         if "playlist" in text:
             tracks.extend([Track(url=url) for url in YoutubePlaylist(text).video_urls])
         else:
             tracks.append(Track(url=text))
+
     else:
         tracks.append(Track(name=text))
+
     return tracks
 
 
 def background_streaming(get_sessions):
     while True:
         sleep(0.5)
+
         for session in get_sessions().values():
             if session.streaming_queue:
                 l = len(session.streaming_queue)
+
                 for _ in range(l):
                     track = session.streaming_queue.pop(0)
                     if track.stream():
