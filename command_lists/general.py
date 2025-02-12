@@ -1,5 +1,6 @@
 from random import random, choice
 from functools import reduce
+from deep_translator import GoogleTranslator
 
 from command_management import commands
 from database import database_handler as database
@@ -74,6 +75,10 @@ class CommandList(commands.CommandList):
             message = str(member.avatar) if member else "no such user exists"
 
         await context.send_message(message)
+
+    @commands.command("translate", desc="Translates some provided text. Can optionally supply languages to translate to or from")
+    async def translate_text(self, context, text:str, from_language:str="auto", to_language:str="en"):
+        await context.send_message(GoogleTranslator(source=from_language, target=to_language).translate(text))
 
     @commands.command("fortune", desc="Get a random fortune once per day")
     async def fortune(self, context):
