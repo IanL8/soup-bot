@@ -1,32 +1,37 @@
 from discord import app_commands, Interaction
 from abc import ABC, abstractmethod
+import inspect
 
-from .context import Context
 from soupbot_util.logger import soup_log
+from .context import Context
 
 
-class _CommandInfo:
-    def __init__(self, name:str, desc:str, enable_input:bool):
+class _CommandDataWrapper:
+    def __init__(self, name:str, desc:str, parameters:str, args:str):
         self.name = name
         self.desc = desc
-        self.enable_input = enable_input
+        self.parameters = parameters
+        self.args = args
 
 
-_all_commands: {callable:_CommandInfo} = dict()
+_all_commands: {callable:_CommandDataWrapper} = dict()
 
 
-def command(name:str, desc:str="...", enable_input:bool=False):
-    """Decorator for methods defining a discord bot command. Commands must take one arg 'context', be asynchronous, and
-    be an instance method to a subclass of 'CommandList' in order to work correctly."""
+def command(name:str, desc:str="..."):
+    """Decorator for methods defining a discord bot command. Command must have the parameter 'context', be asynchronous, and
+    be an instance method to a subclass of 'CommandList' in order to work correctly. Any parameters after context will be
+    given as fields for the command and must be given a type."""
 
     def decorator(f:callable):
 
-        async def wrapper(*args):
-            soup_log(f"{name} {args[1].content}", "cmd")
-            return await f(*args)
+        parameters = str(inspect.signature(f))
+        parameters = parameters[parameters.index("context") + 8:-1].strip()
 
-        _all_commands[wrapper] = _CommandInfo(name, desc, enable_input)
-        return wrapper
+        args = str(inspect.getfullargspec(f).args)
+        args = args[args.index("'context'") + 10:-1].replace("'", "").strip()
+
+        _all_commands[f] = _CommandDataWrapper(name, desc, parameters, args)
+        return f
 
     return decorator
 
@@ -36,34 +41,26 @@ class CommandList(ABC):
     name: str = "default"
 
     def __init__(self):
-        self._basic_commands: {str:callable} = dict()
         self.app_commands: [callable] = []
 
         for value in self.__class__.__dict__.values():
             if value in _all_commands.keys():
                 cmd = _all_commands.pop(value)
-                self._basic_commands[cmd.name] = value
-                self.app_commands.append(self._app_command(cmd.name, cmd.desc, cmd.enable_input, value))
 
-    def _app_command(self, name, desc, enable_input, f):
-        if enable_input:
-            async def app_wrapper(interaction:Interaction, enter:str=None):
-                return await f(self, Context(enter if enter else "", interaction=interaction))
+                self.app_commands.append(self._generate_app_command(cmd.name, cmd.desc, cmd.parameters, cmd.args, value))
 
-        else:
-            async def app_wrapper(interaction:Interaction):
-                return await f(self, Context("", interaction=interaction))
+    def _generate_app_command(self, name, desc, parameters, args, function):
+        cmd_name_llll = name # avoid variable name overlap with variables in parameter/args strings
+        scope = dict(locals().copy(), **globals().copy())
 
-        return app_commands.command(name=name, description=desc)(app_wrapper)
+        exec(
+            f"async def app_wrapper(interaction:Interaction, {parameters}): "
+                f"soup_log(cmd_name_llll + ' ' + str(({args})), 'cmd');"
+                f"return await function(self, Context(interaction=interaction), {args});",
+            scope
+        )
 
-    async def __call__(self, command_name, context):
-        if command_name not in self._basic_commands.keys():
-            return None
-
-        return await self._basic_commands[command_name](self, context)
-
-    def __contains__(self, item):
-        return item in self._basic_commands.keys()
+        return app_commands.command(name=name, description=desc[:100])(scope["app_wrapper"])
 
     @abstractmethod
     def on_close(self):

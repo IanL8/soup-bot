@@ -1,6 +1,5 @@
 import discord
 
-from command_management.context import Context
 from command_management.command_handler import CommandHandler
 from command_lists import general, music, timer
 
@@ -43,20 +42,3 @@ class SoupBotClient(discord.Client):
 
     async def on_guild_join(self, guild):
         database.add_guild(guild)
-
-    async def on_message(self, message):
-        prefix = database.get_prefix(message.guild)
-        if len(message.content) == 0 or prefix != message.content[0] or message.author == self.user:
-            return
-
-        command_name = message.content.split(" ").pop(0)[1:]
-        index = self.command_handler.command_list_index(command_name)
-
-        if index == -1:
-            return
-
-        await self.command_handler.pass_command(
-            index,
-            command_name,
-            Context(message.content[len(prefix) + len(command_name):].strip(), message=message, bot=self)
-        )
