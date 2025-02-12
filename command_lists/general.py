@@ -13,115 +13,95 @@ class CommandList(commands.CommandList):
     def on_close(self):
         pass
 
-    @commands.command("hello")
+    @commands.command("hello", desc="Says hi to the user")
     async def hello(self, context):
-        await context.send_message(f"hi {context.author.display_name}")
+        await context.send_message(f"hiii :3 {context.author.display_name}")
 
     @commands.command("true")
     async def truer(self, context):
         await context.send_message("TRUE" if random() > .49 else "NOT FALSE")
 
-    @commands.command("roll", desc="roll a dice with the given amount of sides [default 100]", enable_input=True)
-    async def roll(self, context):
-        if len(context.args) > 0 and context.args[0].isdigit() and 1000000000 > int(context.args[0]) > 0:
-            sides = int(context.args[0])
-        else:
-            sides = 100
+    @commands.command("roll", desc="Get a random number [default 100]")
+    async def roll(self, context, max_number:int=100):
+        if not (1000000000 > max_number > 0):
+            max_number = 100
 
-        await context.send_message(int(random() * sides) + 1)
+        await context.send_message(int(random() * max_number) + 1)
 
-    @commands.command("coinflip", desc="flip a coin")
+    @commands.command("coinflip", desc="Flip a coin")
     async def coinflip(self, context):
         await context.send_message("Heads" if int(random()*2) == 1 else "Tails")
 
-    @commands.command("word", desc="random word")
+    @commands.command("word", desc="Get a random word")
     async def word(self, context):
         await context.send_message(choice(WORD_LIST))
 
-    @commands.command("phrase", desc="random string of words of a given size [default 2 | max 100]", enable_input=True)
-    async def phrase(self, context):
-        if len(context.args) > 0 and context.args[0].isdigit() and 0 < int(context.args[0]) < 101:
-            length = int(context.args[0])
+    @commands.command("phrase", desc="Random string of words of a given size [default 2 | max 100]")
+    async def phrase(self, context, size:int=2):
+        if not (0 < size < 101):
+            size = 2
+
+        await context.send_message(reduce(lambda x, y: f"{x} {y}", [choice(WORD_LIST) for _ in range(size)]))
+
+    @commands.command("8ball", desc="Receive an answer from a magic 8 ball. Optionally can provide a question")
+    async def magic_8Ball(self, context, question:str=""):
+        if len(question) > 0:
+            message = f"{question}\n\n{choice(MAGIC_8BALL_LIST)}"
         else:
-            length = 2
+            message = choice(MAGIC_8BALL_LIST)
 
-        await context.send_message(reduce(lambda x, y: f"{x} {y}", [choice(WORD_LIST) for _ in range(length)]))
+        await context.send_message(message)
 
-    @commands.command("8ball", enable_input=True)
-    async def magic_8Ball(self, context):
-        if not context.is_basic_command and context.content:
-            prompt = context.content + "\n\n"
-        else:
-            prompt = ""
+    @commands.command("opgg-lookup", desc="Look up a given league player on op.gg")
+    async def lookup(self, context, username:str):
+        await context.send_message(f"https://na.op.gg/summoners/na/{username.replace(' ', '%20').replace('#', '-')}")
 
-        await context.send_message(prompt + choice(MAGIC_8BALL_LIST))
+    @commands.command("which", desc="Makes a random selection between options separated by commas")
+    async def which(self, context, options:str):
+        await context.send_message(f"picking out of the options {options}...\n\n"
+                                   f"{choice([x for x in options.split(',') if x.strip() != ''])}")
 
-    @commands.command("lookup", desc="look up a given league player on op.gg", enable_input=True)
-    async def lookup(self, context):
-        if len(context.content) == 0:
-            await context.send_message("no name given")
-        else:
-            await context.send_message(
-                f"https://na.op.gg/summoners/na/{context.content.replace(' ', '%20').replace('#', '-')}"
-            )
-
-    @commands.command("which", desc="random selection between options [separate by commas]", enable_input=True)
-    async def which(self, context):
-        if len(context.content) == 0:
-            await context.send_message("no options provided")
-        else:
-            options = tuple(filter(lambda x: x.strip() != "", context.content.split(",")))
-            await context.send_message(choice(options))
-
-    @commands.command("git")
-    async def git(self, context):
-        await context.send_message("https://github.com/IanL8/soup-bot")
-
-    @commands.command("avatar", desc="fetch a user's profile picture", enable_input=True)
-    async def get_avatar(self, context):
-        if len(context.content) == 0:
-            await context.send_message(str(context.author.avatar))
+    @commands.command("avatar", desc="Fetch a user's pfp by @ing them or writing their name. By default will return your avatar")
+    async def get_avatar(self, context, username:str=""):
+        if len(username) == 0:
+            message = str(context.author.avatar)
 
         elif len(context.mentions) > 0:
-            await context.send_message(str(context.mentions[0].avatar))
+            message = str(context.mentions[0].avatar)
 
         else:
-            member = context.guild.get_member_named(context.content)
-            await context.send_message(str(member.avatar) if member else "no such user exists")
+            member = context.guild.get_member_named(username)
+            message = str(member.avatar) if member else "no such user exists"
 
-    @commands.command("fortune", desc="get a random fortune once per day")
+        await context.send_message(message)
+
+    @commands.command("fortune", desc="Get a random fortune once per day")
     async def fortune(self, context):
         await context.send_message(database.fortune(context.author))
 
-    @commands.command("add-movie", desc="add a movie to the list", enable_input=True)
-    async def add_movie(self, context):
-        if len(context.content) == 0:
-            await context.send_message("no movie given")
-
-        elif database.movies_table_contains(context.guild, context.content):
+    @commands.command("movie-add", desc="Add a movie to the movie list")
+    async def add_movie(self, context, name:str):
+        if database.movies_table_contains(context.guild, name):
             await context.send_message("movie already in list")
 
-        elif not database.add_movie(context.guild, context.content):
+        elif not database.add_movie(context.guild, name):
             await context.send_message("database error while adding movie")
 
         else:
             await context.confirm()
 
-    @commands.command("remove-movie", desc="remove a movie from the list", enable_input=True)
-    async def remove_movie(self, context):
-        if len(context.content) == 0:
-            await context.send_message("no movie given")
-
-        elif not database.movies_table_contains(context.guild, context.content):
+    @commands.command("movie-remove", desc="Remove a movie from the movie list")
+    async def remove_movie(self, context, name:str):
+        if not database.movies_table_contains(context.guild, name):
             await context.send_message("movie not in list")
 
-        elif not database.remove_movie(context.guild, context.content):
+        elif not database.remove_movie(context.guild, name):
             await context.send_message("database error while removing movie")
 
         else:
             await context.confirm()
 
-    @commands.command("movies", desc="list all movies")
+    @commands.command("movies", desc="List all movies")
     async def movie_list(self, context):
         movies = database.get_movie_list(context.guild)
 
@@ -129,17 +109,3 @@ class CommandList(commands.CommandList):
             await context.send_message("no movies")
         else:
             await context.send_message("```\n" + reduce(lambda x, y: f"{x}\n{y}", movies) + "\n```")
-
-    @commands.command("change-prefix", desc="change the prefix that the bot is accessed with", enable_input=True)
-    async def set_prefix(self, context):
-        if not context.guild.owner_id == context.author.id:
-            await context.send_message("only the server owner has access to this command")
-
-        elif len(context.content) == 0 or len(context.content) > 2:
-            await context.send_message("bad prefix")
-
-        elif not database.set_prefix(context.guild, context.content):
-            await context.send_message("database error while setting new prefix")
-
-        else:
-            await context.confirm()

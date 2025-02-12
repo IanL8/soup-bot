@@ -1,12 +1,11 @@
 from discord import app_commands, Client
 
 from .commands import CommandList
-from .context import Context
 from soupbot_util.logger import soup_log
 
 
 class CommandHandler:
-    """Defines how the discord client adds and calls commands."""
+    """Defines how the discord client adds commands."""
 
     def __init__(self):
         self.command_lists : [CommandList] = []
@@ -27,13 +26,3 @@ class CommandHandler:
     def close(self):
         for command_list in self.command_lists:
             command_list.on_close()
-
-    def command_list_index(self, command_name:str):
-        for index, command_list in enumerate(self.command_lists):
-            if command_name in command_list:
-                return index
-
-        return -1
-
-    async def pass_command(self, index: int, command_name: str, context: Context):
-        return await self.command_lists[index](command_name, context)

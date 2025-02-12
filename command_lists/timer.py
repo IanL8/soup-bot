@@ -12,12 +12,12 @@ class CommandList(commands.CommandList):
         pass
 
     @staticmethod
-    async def _timer(uid, channel, end_time):
+    async def _timer(uid, name, channel, end_time):
         while True:
             await asyncio.sleep(0.9)
 
             if int(time.time()) == end_time:
-                return await channel.send(f"<@{uid}>")
+                return await channel.send(f"{name} <@{uid}>")
 
     @staticmethod
     def _duration_str_to_seconds(text):
@@ -47,20 +47,20 @@ class CommandList(commands.CommandList):
 
         return total_seconds
 
-    @commands.command("timer", desc="start a timer with a duration in [seconds, minutes, hours, days]", enable_input=True)
-    async def timer_command(self, context):
-        if len(context.content) == 0:
-            await context.send_message("no timer duration given")
-            return
+    @commands.command("timer", desc="Start a timer with a duration in [seconds, minutes, hours, days]")
+    async def timer_command(self, context, duration:str, name:str=""):
 
-        duration = self._duration_str_to_seconds(context.content.lower())
+        duration_number = self._duration_str_to_seconds(duration.lower())
 
-        if duration <= 0:
+        if duration_number <= 0:
             await context.send_message("timer duration must be greater than 0")
 
         else:
             asyncio.run_coroutine_threadsafe(
-                self._timer(context.author.id, context.channel, int(time.time() + duration)),
+                self._timer(context.author.id, name, context.channel, int(time.time() + duration_number)),
                 context.bot.loop
             )
-            await context.confirm()
+            if len(name) == 0:
+                await context.confirm()
+            else:
+                await context.send_message(f"timer **{name}** started")

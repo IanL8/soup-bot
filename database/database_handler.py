@@ -11,9 +11,6 @@ from soupbot_util.logger import soup_log
 from soupbot_util.constants import FORTUNES
 
 
-# incorporate a more efficient cache with an actual replacement policy if bot scales past more than a few servers
-# until then this works ok
-_prefix_cache = dict()
 _DATABASE_NAME = "database/database.db"
 _QueryResult = namedtuple("_QueryResult", ["is_success", "values"])
 
@@ -143,38 +140,6 @@ def add_guild(guild) -> bool:
 
     conn.commit()
     conn.close()
-    return True
-
-
-def get_prefix(guild) -> str:
-    """Fetches the command prefix for a guild."""
-
-    if guild.id in _prefix_cache.keys():
-        return _prefix_cache[guild.id]
-
-    conn = sql.connect(_DATABASE_NAME)
-
-    values = _query(conn, "SELECT flag FROM Guilds WHERE gid=?;", (guild.id,)).values
-    prefix = "!" if len(values)==0 else values[0] # default in case of unexpected error
-
-    _prefix_cache[guild.id] = prefix
-    conn.close()
-    return prefix
-
-
-def set_prefix(guild, new_prefix) -> bool:
-    """Sets the prefix for the guild to new_prefix. Returns True if successful, False otherwise."""
-
-    conn = sql.connect(_DATABASE_NAME)
-
-    if not _query(conn, "UPDATE Guilds SET flag=? WHERE gid=?;", (new_prefix, guild.id)).is_success:
-        conn.close()
-        return False
-
-    conn.commit()
-    conn.close()
-    _prefix_cache[guild.id] = new_prefix
-
     return True
 
 
