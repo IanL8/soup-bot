@@ -1,7 +1,7 @@
 import discord
 
 from command_management.command_handler import CommandHandler
-from command_lists import general, music, timer
+from command_lists import general, music, timer, translator
 
 from database import database_handler as database
 
@@ -17,6 +17,7 @@ class SoupBotClient(discord.Client):
         self.command_handler.add_command_list(general.CommandList())
         self.command_handler.add_command_list(music.CommandList())
         self.command_handler.add_command_list(timer.CommandList())
+        self.command_handler.add_command_list(translator.CommandList())
 
         database.init_database()
 
