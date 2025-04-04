@@ -1,6 +1,7 @@
 import requests
 import threading
 from time import sleep
+import re
 
 from command_management import commands
 from soupbot_util import constants
@@ -8,6 +9,7 @@ from soupbot_util import constants
 
 _apps = []
 _is_running = True
+_semaphore = threading.Semaphore(1)
 
 def _get_apps():
     request = requests.get(
@@ -26,6 +28,7 @@ def _get_apps():
             f"&last_appid={response['response']['last_appid']}&format=json")
 
         response = request.json()
+
         temp_apps.extend(response["response"]["apps"])
         have_more_results = response["response"].get("have_more_results")
 
@@ -35,7 +38,10 @@ def _background_apps_refresh(is_running):
     global _apps
 
     while is_running():
-        _apps = _get_apps()
+        temp_apps = _get_apps()
+        _semaphore.acquire()
+        _apps = temp_apps
+        _semaphore.release()
         sleep(300)
 
 
@@ -52,19 +58,46 @@ class CommandList(commands.CommandList):
 
     @commands.command("player-count", desc="Get the player count of a steam game")
     async def get_player_count(self, context, name: str):
+        await context.defer_message()
+
         matches = []
 
+        _semaphore.acquire()
         for app in _apps:
-            if name.lower() in app["name"].lower():
-                request = requests.get(f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={app['appid']}&format=json")
+
+            filtered_app_name = re.sub("[^a-z0-9\s_]", "", app["name"].lower())
+
+            if name.lower() in filtered_app_name:
+
+                request = requests.get(
+                    f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={app['appid']}&format=json")
                 response = request.json()
+
                 if "player_count" in response["response"]:
+
+                    if name.lower () == filtered_app_name:
+                        # if an exact match, return early
+
+                        await context.send_message(f"*{app['name']}* currently has {response['response']['player_count']} players online")
+                        return
+
                     matches.append((app["name"], response["response"]["player_count"]))
 
-        matches.sort(key=lambda x: x[1], reverse=True)
+            if len(matches) == 15:
+                break
+
+        _semaphore.release()
 
         if len(matches) == 0:
             await context.send_message(f"no steam games with the name *{name}*")
+
         else:
-            app = matches[0]
+            highest_player_count_index = -1
+
+            for i in range(len(matches)):
+                if matches[i][1] > matches[highest_player_count_index][1]:
+                    highest_player_count_index = i
+
+            app = matches[highest_player_count_index]
+
             await context.send_message(f"*{app[0]}* currently has {app[1]} players online")
