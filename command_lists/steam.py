@@ -1,6 +1,6 @@
 import requests
 import threading
-from time import sleep
+from time import sleep, time
 import re
 
 from command_management import commands
@@ -9,7 +9,6 @@ from soupbot_util import constants
 
 _apps = []
 _is_running = True
-_semaphore = threading.Semaphore(1)
 
 def _get_apps():
     request = requests.get(
@@ -39,9 +38,7 @@ def _background_apps_refresh(is_running):
 
     while is_running():
         temp_apps = _get_apps()
-        _semaphore.acquire()
         _apps = temp_apps
-        _semaphore.release()
         sleep(300)
 
 
@@ -61,9 +58,9 @@ class CommandList(commands.CommandList):
         await context.defer_message()
 
         matches = []
+        apps = _apps.copy()
 
-        _semaphore.acquire()
-        for app in _apps:
+        for app in apps:
 
             filtered_app_name = re.sub("[^a-z0-9\s_]", "", app["name"].lower())
 
@@ -86,7 +83,6 @@ class CommandList(commands.CommandList):
             if len(matches) == 15:
                 break
 
-        _semaphore.release()
 
         if len(matches) == 0:
             await context.send_message(f"no steam games with the name *{name}*")
