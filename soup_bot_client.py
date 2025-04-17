@@ -3,7 +3,7 @@ import discord
 from command_management.command_handler import CommandHandler
 from command_lists import general, music, timer, translator, steam
 
-from database import database_handler as database
+from database.database_management import db_setup, db_guilds
 
 from soupbot_util.logger import soup_log
 
@@ -20,11 +20,11 @@ class SoupBotClient(discord.Client):
         self.command_handler.add_command_list(translator.CommandList())
         self.command_handler.add_command_list(steam.CommandList())
 
-        database.init_database()
+        db_setup.init_database()
 
     async def on_ready(self):
         for guild in self.guilds:
-            database.add_guild(guild)
+            db_guilds.add(guild)
 
         try:
             await self.command_handler.make_command_tree(self).sync()
@@ -43,4 +43,4 @@ class SoupBotClient(discord.Client):
         soup_log(f"{self.user.name} has disconnected from Discord", "bot")
 
     async def on_guild_join(self, guild):
-        database.add_guild(guild)
+        db_guilds.add(guild)
