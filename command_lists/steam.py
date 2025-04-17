@@ -6,6 +6,7 @@ import re
 from command_management import commands
 from database.database_management import db_steam_apps
 from soupbot_util import constants
+from soupbot_util.logger import soup_log
 
 
 _is_running = True
@@ -43,6 +44,9 @@ def _fill_table(apps):
     def search_prio(pc):
         return float(pc) / 100000.0
 
+    soup_log(f"processing {len(apps)} apps", "APP")
+    start_time = time()
+
     for i, app in enumerate(apps):
 
         request = requests.get(
@@ -57,6 +61,8 @@ def _fill_table(apps):
             int(time())
         )
 
+    soup_log(f"finished processing apps at {time() - start_time} seconds", "APP")
+
 
 def _background_apps_refresh(is_running):
     half_hour = 1800
@@ -67,11 +73,9 @@ def _background_apps_refresh(is_running):
         _fill_table(_get_apps())
 
     while is_running():
-        start_time = time()
-
         apps = _get_apps()
         app_ids = db_steam_apps.get_all_app_ids()
-        app_ids_in_need_of_update = db_steam_apps.get_oldest_by_update_time(150)
+        app_ids_in_need_of_update = db_steam_apps.get_oldest_by_update_time(100)
 
         new_apps = []
         update_apps = []
@@ -91,7 +95,7 @@ def _background_apps_refresh(is_running):
 
         db_steam_apps.remove_all(removed_from_steam)
 
-        sleep(half_hour - (time()-start_time))
+        sleep(half_hour)
 
 
 threading.Thread(target=_background_apps_refresh, args=(lambda: _is_running,), daemon=True).start()
