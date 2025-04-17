@@ -58,12 +58,3 @@ def add_member(conn, uid, gid) -> bool:
     results = query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (uid, gid,))
 
     return results.is_success
-
-
-# add/update app
-# make a new refresh table entry
-# update last app entered, update when complete
-# return incomplete refresh; return start time of refresh or None if all completed
-# search table; return top result sort by search prio
-# get all app_ids
-# remove app by id

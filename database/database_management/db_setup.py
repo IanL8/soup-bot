@@ -51,16 +51,8 @@ def init_database():
         "name VARCHAR(40), "
         "searchable_name VARCHAR(40), "
         "search_priority DOUBLE, "
+        "last_update_time INTEGER UNSIGNED, "
         "PRIMARY KEY (app_id) "
-        ");"
-    )
-    _soup_sql.query(
-        conn,
-        "CREATE TABLE IF NOT EXISTS SteamAppTableRefreshes("
-        "start_time INTEGER UNSIGNED NOT NULL, "
-        "last_app_id INTEGER, "
-        "complete BOOL DEFAULT 0, "
-        "PRIMARY KEY (start_time) "
         ");"
     )
     conn.commit()
