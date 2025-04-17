@@ -65,7 +65,7 @@ class CommandList(commands.CommandList):
         elif not _sessions[context.guild.id].playing:
             track = tracks.pop(0)
 
-            if not track.stream():
+            if not await context.run_blocking_func(track.stream):
                 await context.send_message("bad url or search")
                 return
             if not in_vc:
