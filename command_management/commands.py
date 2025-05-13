@@ -2,8 +2,11 @@ from discord import app_commands, Interaction
 from abc import ABC, abstractmethod
 import inspect
 
-from soupbot_util.logger import soup_log
 from .context import Context
+from soup_util import soup_logging
+
+
+_logger = soup_logging.get_logger()
 
 
 class _CommandDataWrapper:
@@ -16,6 +19,7 @@ class _CommandDataWrapper:
 
 
 _all_commands: {callable:_CommandDataWrapper} = dict()
+
 
 def command(name:str, desc:str="...", autocomplete_fields:{str:list[str]}= None):
     """Decorator for methods defining a discord bot command. Command must have the parameter 'context', be asynchronous, and
@@ -55,8 +59,9 @@ class CommandList(ABC):
         exec(
             f"@app_commands.command(name=command_data.name, description=command_data.desc[:100])\n"
             f"async def app_wrapper(interaction:Interaction, {command_data.parameters}): "
-                f"soup_log(command_data.name + ' ' + str(({command_data.args})), 'cmd');"
-                f"return await function(self, Context(interaction=interaction), {command_data.args});",
+            f"args = [{command_data.args}];"
+            f"_logger.info('%s %s',command_data.name, '' if len(args) == 0 else str(args));"
+            f"return await function(self, Context(interaction=interaction), {command_data.args});",
             scope
         )
 

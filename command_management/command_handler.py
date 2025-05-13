@@ -1,7 +1,10 @@
 from discord import app_commands, Client
 
 from .commands import CommandList
-from soupbot_util.logger import soup_log
+from soup_util import soup_logging
+
+
+_logger = soup_logging.get_logger()
 
 
 class CommandHandler:
@@ -12,7 +15,7 @@ class CommandHandler:
 
     def add_command_list(self, command_list: CommandList):
         self.command_lists.append(command_list)
-        soup_log(f"{command_list.name} added", "lst")
+        _logger.info("%s added", command_list.name)
 
     def make_command_tree(self, client: Client):
         tree = app_commands.CommandTree(client)

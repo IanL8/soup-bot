@@ -1,9 +1,10 @@
 import deepl
 
 from command_management import commands
-from soupbot_util.constants import  DEEPL_API_KEY, DEEPL_TRANSLATION_KEY, AZURE_TRANSLATION_KEY
+from soup_util.constants import  DEEPL_API_KEY, DEEPL_TRANSLATION_KEY, AZURE_TRANSLATION_KEY
 
 from ._azure_translator import azure_translate, azure_detect
+
 
 deepl_translator = deepl.Translator(DEEPL_API_KEY)
 

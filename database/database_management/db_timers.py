@@ -2,7 +2,7 @@ from random import choice as _choice
 import time as _time
 
 from . import _soup_sql
-from soupbot_util.constants import FORTUNES as _FORTUNES
+from soup_util.constants import FORTUNES as _FORTUNES
 
 
 def _duration_to_string(duration) -> str:

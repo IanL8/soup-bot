@@ -2,7 +2,10 @@ import sqlite3 as sql
 from functools import reduce
 from collections import namedtuple
 
-from soupbot_util.logger import soup_log
+from soup_util import soup_logging
+
+
+_logger = soup_logging.get_logger()
 
 
 _DATABASE_NAME = "database/database.db"
@@ -30,23 +33,18 @@ def query(conn, query_str, values=tuple(), flatten_results=True) -> _QueryResult
             ret = conn.execute(query_str).fetchall()
         else:
             ret = conn.execute(query_str, values).fetchall()
+        _logger.info(query_str)
 
     except sql.OperationalError as e1:
-        soup_log(f"OperationError on {queryType} query", "err")
-        soup_log(f"Query values: {values}", "err")
-        soup_log(str(e1.args), "err")
+        _logger.warning(str(e1), exc_info=True)
         return _QueryResult(False, ())
 
     except sql.IntegrityError as e2:
-        soup_log(f"IntegrityError on {queryType} query", "err")
-        soup_log(f"Query values: {values}", "err")
-        soup_log(str(e2.args), "err")
+        _logger.warning(str(e2), exc_info=True)
         return _QueryResult(False, ())
 
     except sql.Error as e3:
-        soup_log(f"Unknown SQL error on {queryType} query", "err")
-        soup_log(f"Query values: {values}", "err")
-        soup_log(str(e3.args), "err")
+        _logger.warning(str(e3), exc_info=True)
         return _QueryResult(False, ())
 
     return _QueryResult(True, _flatten_query_results(ret) if flatten_results else ret)
