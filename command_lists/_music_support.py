@@ -10,9 +10,11 @@ import yt_dlp
 from pytube import Playlist as YoutubePlaylist
 from discord import FFmpegOpusAudio
 
-from soupbot_util.constants import SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, YDL_OPTIONS, FFMPEG_EXE
-from soupbot_util.logger import soup_log
+from soup_util.constants import SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, YDL_OPTIONS, FFMPEG_EXE
+from soup_util import soup_logging
 
+
+_logger = soup_logging.get_logger()
 
 auth_manager = SpotifyClientCredentials(client_id=SPOTIPY_CLIENT_ID, client_secret=SPOTIPY_CLIENT_SECRET)
 sp = spotipy.Spotify(auth_manager=auth_manager)
@@ -50,7 +52,7 @@ class Track:
                     info = ydl.extract_info(self.url, download=False)
 
             except yt_dlp.utils.YoutubeDLError as e:
-                soup_log(f"{e}","err")
+                _logger.warning(str(e), exc_info=True)
                 return False
 
         if info:
@@ -132,7 +134,7 @@ def gather_tracks(text):
                 return None
 
         except spotipy.SpotifyException as e:
-            soup_log(f"{e}", "err")
+            _logger.warning(str(e), exc_info=True)
             return None
 
         for track, album_name in items:

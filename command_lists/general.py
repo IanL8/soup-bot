@@ -3,7 +3,7 @@ from functools import reduce
 
 from command_management import commands
 from database.database_management import db_movies, db_timers
-from soupbot_util import constants
+from soup_util.constants import WORD_LIST, MAGIC_8BALL_LIST
 
 
 class CommandList(commands.CommandList):
@@ -34,21 +34,21 @@ class CommandList(commands.CommandList):
 
     @commands.command("word", desc="Get a random word")
     async def word(self, context):
-        await context.send_message(choice(constants.WORD_LIST))
+        await context.send_message(choice(WORD_LIST))
 
     @commands.command("phrase", desc="Random string of words of a given size [default 2 | max 100]")
     async def phrase(self, context, size:int=2):
         if not (0 < size < 101):
             size = 2
 
-        await context.send_message(reduce(lambda x, y: f"{x} {y}", [choice(constants.WORD_LIST) for _ in range(size)]))
+        await context.send_message(reduce(lambda x, y: f"{x} {y}", [choice(WORD_LIST) for _ in range(size)]))
 
     @commands.command("8ball", desc="Receive an answer from a magic 8 ball. Optionally can provide a question")
     async def magic_8Ball(self, context, question:str=""):
         if len(question) > 0:
-            message = f"{question}\n\n{choice(constants.MAGIC_8BALL_LIST)}"
+            message = f"{question}\n\n{choice(MAGIC_8BALL_LIST)}"
         else:
-            message = choice(constants.MAGIC_8BALL_LIST)
+            message = choice(MAGIC_8BALL_LIST)
 
         await context.send_message(message)
 

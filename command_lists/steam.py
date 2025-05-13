@@ -5,10 +5,10 @@ import re
 
 from command_management import commands
 from database.database_management import db_steam_apps
-from soupbot_util import constants
-from soupbot_util.logger import soup_log
+from soup_util import constants, soup_logging
 
 
+_logger = soup_logging.get_logger()
 _is_running = True
 
 
@@ -44,7 +44,7 @@ def _fill_table(apps):
     def search_prio(pc):
         return float(pc) / 100000.0
 
-    soup_log(f"processing {len(apps)} apps", "APP")
+    _logger.info("processing %s apps", len(apps))
     start_time = time()
 
     for i, app in enumerate(apps):
@@ -61,7 +61,7 @@ def _fill_table(apps):
             int(time())
         )
 
-    soup_log(f"finished processing apps at {time() - start_time} seconds", "APP")
+    _logger.info("finished processing apps at %s seconds", time() - start_time)
 
 
 def _background_apps_refresh(is_running):

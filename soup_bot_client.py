@@ -5,7 +5,10 @@ from command_lists import general, music, timer, translator, steam
 
 from database.database_management import db_setup, db_guilds
 
-from soupbot_util.logger import soup_log
+from soup_util import soup_logging
+
+
+_logger = soup_logging.get_logger()
 
 
 class SoupBotClient(discord.Client):
@@ -30,9 +33,9 @@ class SoupBotClient(discord.Client):
             await self.command_handler.make_command_tree(self).sync()
 
         except discord.errors.ClientException:
-            soup_log("failed to create command tree", "bot")
+            _logger.warning("failed to create command tree", exc_info=True)
 
-        soup_log(f"{self.user.name} has connected to Discord", "bot")
+        _logger.info("%s has connected to Discord", self.user.name)
 
     async def close(self):
         for vc in self.voice_clients:
@@ -40,7 +43,7 @@ class SoupBotClient(discord.Client):
 
         self.command_handler.close()
 
-        soup_log(f"{self.user.name} has disconnected from Discord", "bot")
+        _logger.info("%s has disconnected from Discord", self.user.name)
 
     async def on_guild_join(self, guild):
         db_guilds.add(guild)
