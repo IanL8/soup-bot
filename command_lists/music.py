@@ -78,7 +78,7 @@ class CommandList(commands.CommandList):
 
             context.guild.voice_client.play(
                 track.audio_source,
-                after=lambda _: _sessions[context.guild.id].play_next(
+                after=lambda _: _ if not _sessions.get(context.guild.id) else _sessions[context.guild.id].play_next(
                     context.channel,
                     context.guild.voice_client,
                     context.bot.loop
@@ -174,7 +174,7 @@ class CommandList(commands.CommandList):
             await context.send_message("empty queue")
             return
 
-        queue = [track for track in _sessions[context.guild.id].queue + _sessions[context.guild.id].streaming_queue]
+        queue = [track for track in _sessions[context.guild.id].queue]
         message = await context.send_message(self._page(queue[:_DISPLAY_LIMIT], 1))
         if len(queue) < _DISPLAY_LIMIT + 1:
             return
