@@ -27,11 +27,13 @@ class Track:
 
     _AVOIDED_TERMS = ["react", "cover", "live"]
 
-    def __init__(self, name=None, album="", artists="", url=None):
+    def __init__(self, name="", album="", artists="", search_query=None, url=None):
         self.name = name
         self.album = album
         self.artists = artists
+        self.search_query = search_query
         self.url = url
+
         self.stream_url = ""
 
     def _find_best_result(self, entries) -> int:
@@ -43,8 +45,10 @@ class Track:
 
     def stream(self):
         if not self.url:
+            q = self.search_query if self.search_query else f"\"{self.name}\" {self.artists}"
+
             result = _youtube.search().list(
-                part="snippet", q=f"{self.name} {self.album} {self.artists}", type="video", safeSearch="none",
+                part="snippet", q=q, type="video", safeSearch="none",
                 maxResults=5, order="viewCount"
             ).execute()
 
@@ -160,7 +164,7 @@ def gather_tracks(text):
             tracks.append(Track(url=text))
 
     else:
-        tracks.append(Track(name=text))
+        tracks.append(Track(search_query=text))
 
     return tracks
 

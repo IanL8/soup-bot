@@ -26,14 +26,11 @@ def connect():
 def query(conn, query_str, values=tuple(), flatten_results=True) -> _QueryResult:
     """Returns the results of the query or None if an exception occurred."""
 
-    queryType = query_str.split()[0]
-
     try:
         if not values:
             ret = conn.execute(query_str).fetchall()
         else:
             ret = conn.execute(query_str, values).fetchall()
-        _logger.info(query_str)
 
     except sql.OperationalError as e1:
         _logger.warning(str(e1), exc_info=True)
