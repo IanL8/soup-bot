@@ -12,32 +12,26 @@ def is_empty() -> bool:
     return _is_empty
 
 
-def add_or_update(app_id, name, searchable_name, search_priority, last_update_time) -> bool:
+def add_or_update(app_id, name, searchable_name, search_priority, last_update_time):
     """Adds a steam app to SteamApps, or updates its data if its already in the table."""
 
     conn = _soup_sql.connect()
 
     if app_id in _soup_sql.query(conn, "SELECT app_id FROM SteamApps;").values:
-
-        if not _soup_sql.query(
+        _soup_sql.query(
                 conn,
                 "UPDATE SteamApps SET name=?, searchable_name=?, search_priority=?, last_update_time=? WHERE app_id=?;",
                 (name, searchable_name, search_priority, app_id, last_update_time)
-        ).is_success:
-            conn.close()
-            return False
-
-    elif not _soup_sql.query(
+        )
+    else:
+        _soup_sql.query(
             conn,
             "INSERT INTO SteamApps (app_id, name, searchable_name, search_priority, last_update_time) VALUES (?, ?, ?, ?, ?);",
             (app_id, name, searchable_name, search_priority, last_update_time)
-    ).is_success:
-        conn.close()
-        return False
+        )
 
     conn.commit()
     conn.close()
-    return True
 
 
 def get_all_app_ids() -> [int]:
