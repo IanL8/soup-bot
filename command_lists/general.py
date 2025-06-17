@@ -2,7 +2,7 @@ from random import random, choice
 from functools import reduce
 
 from command_management import commands
-from database.database_management import db_movies, db_timers
+from database.database_management import db_movies, db_cooldowns
 from soup_util.constants import WORD_LIST, MAGIC_8BALL_LIST
 
 
@@ -10,7 +10,10 @@ class CommandList(commands.CommandList):
 
     name = "general commands"
 
-    def on_close(self):
+    async def on_start(self):
+        pass
+
+    async def on_close(self):
         pass
 
     @commands.command("hello", desc="Says hi to the user")
@@ -77,29 +80,23 @@ class CommandList(commands.CommandList):
 
     @commands.command("fortune", desc="Get a random fortune once per day")
     async def fortune(self, context):
-        await context.send_message(db_timers.fortune(context.author))
+        await context.send_message(db_cooldowns.fortune(context.author))
 
     @commands.command("movie-add", desc="Add a movie to the movie list")
     async def add_movie(self, context, name:str):
         if db_movies.contains(context.guild, name):
             await context.send_message("movie already in list")
 
-        elif not db_movies.add(context.guild, name):
-            await context.send_message("database error while adding movie")
-
-        else:
-            await context.confirm()
+        db_movies.add(context.guild, name)
+        await context.confirm()
 
     @commands.command("movie-remove", desc="Remove a movie from the movie list")
     async def remove_movie(self, context, name:str):
         if not db_movies.contains(context.guild, name):
             await context.send_message("movie not in list")
 
-        elif not db_movies.remove(context.guild, name):
-            await context.send_message("database error while removing movie")
-
-        else:
-            await context.confirm()
+        db_movies.remove(context.guild, name)
+        await context.confirm()
 
     @commands.command("movies", desc="List all movies")
     async def movie_list(self, context):
