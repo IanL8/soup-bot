@@ -17,11 +17,11 @@ class SoupBotClient(discord.Client):
         super().__init__(**options)
 
         self.command_handler = CommandHandler()
-        self.command_handler.add_command_list(general.CommandList())
-        self.command_handler.add_command_list(music.CommandList())
-        self.command_handler.add_command_list(timer.CommandList())
-        self.command_handler.add_command_list(translator.CommandList())
-        self.command_handler.add_command_list(steam.CommandList())
+        self.command_handler.add_command_list(general.CommandList(self))
+        self.command_handler.add_command_list(music.CommandList(self))
+        self.command_handler.add_command_list(timer.CommandList(self))
+        self.command_handler.add_command_list(translator.CommandList(self))
+        self.command_handler.add_command_list(steam.CommandList(self))
 
         db_setup.init_database()
 
@@ -35,13 +35,15 @@ class SoupBotClient(discord.Client):
         except discord.errors.ClientException:
             _logger.warning("failed to create command tree", exc_info=True)
 
+        await self.command_handler.start()
+
         _logger.info("%s has connected to Discord", self.user.name)
 
     async def close(self):
         for vc in self.voice_clients:
             await vc.disconnect(force=True)
 
-        self.command_handler.close()
+        await self.command_handler.close()
 
         _logger.info("%s has disconnected from Discord", self.user.name)
 
