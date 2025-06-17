@@ -2,6 +2,7 @@ import requests
 import threading
 from time import sleep, time
 import re
+import asyncio
 
 from command_management import commands
 from database.database_management import db_steam_apps
@@ -23,7 +24,7 @@ def _get_apps():
     response = request.json()
 
     have_more_results = True
-    temp_apps = response["response"]["apps"]
+    temp_apps = [] if not "apps" in response["response"].keys() else response["response"]["apps"]
 
     while have_more_results:
         request = requests.get(
@@ -33,7 +34,8 @@ def _get_apps():
         )
         response = request.json()
 
-        temp_apps.extend(response["response"]["apps"])
+        if "apps" in response["response"].keys():
+            temp_apps.extend(response["response"]["apps"])
         have_more_results = response["response"].get("have_more_results")
 
     return temp_apps
@@ -105,7 +107,10 @@ class CommandList(commands.CommandList):
 
     name = "steam commands"
 
-    def on_close(self):
+    async def on_start(self):
+        pass
+
+    async def on_close(self):
         global _is_running
         _is_running = False
 
@@ -113,7 +118,7 @@ class CommandList(commands.CommandList):
     async def get_player_count(self, context, name: str):
         await context.defer_message()
 
-        apps = await context.run_blocking_func(db_steam_apps.search, name, _make_searchable_name(name))
+        apps = await asyncio.to_thread(db_steam_apps.search, name, _make_searchable_name(name))
 
         if len(apps) == 0:
             await context.send_message(f"No steam games with the name *{name}*")
@@ -135,5 +140,4 @@ class CommandList(commands.CommandList):
             await context.send_message(f"No player count is currently available for the app *{app['name']}*")
             return
 
-        await context.send_message(
-            f"*{app['name']}* currently has {response['response']['player_count']} players online")
+        await context.send_message(f"*{app['name']}* currently has {response['response']['player_count']} players online")
