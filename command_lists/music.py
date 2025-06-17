@@ -17,7 +17,10 @@ class CommandList(commands.CommandList):
 
     name = "music commands"
 
-    def on_close(self):
+    async def on_start(self):
+        pass
+
+    async def on_close(self):
         _sessions.clear()
 
     @commands.command("join", desc="Makes the bot join your voice channel")
@@ -65,7 +68,7 @@ class CommandList(commands.CommandList):
         elif not _sessions[context.guild.id].playing:
             track = tracks.pop(0)
 
-            if not await context.run_blocking_func(track.stream):
+            if not await asyncio.to_thread(track.stream):
                 await context.send_message("bad url or search")
                 return
             if not in_vc:
