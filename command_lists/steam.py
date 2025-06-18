@@ -62,7 +62,7 @@ def _fill_table(apps):
             int(time())
         )
 
-    _logger.info("finished processing apps at %s seconds", time() - start_time)
+    _logger.info("finished processing apps in %s seconds", time() - start_time)
 
 
 def _background_apps_refresh(is_running):
