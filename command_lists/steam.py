@@ -25,7 +25,7 @@ def _get_apps():
 
     temp_apps = [] if not "apps" in response["response"].keys() else response["response"]["apps"]
 
-    while response["response"].get("have_more_results"):
+    while "have_more_results" in response["response"].keys():
         request = requests.get(
             f"https://api.steampowered.com/IStoreService/GetAppList/v1/"
             f"?key={constants.STEAM_API_KEY}&include_games=true&max_results=50000"
@@ -39,10 +39,11 @@ def _get_apps():
     return temp_apps
 
 
-def _fill_table(apps):
+def _search_prio(pc):
+    return float(pc) / 100000.0
 
-    def search_prio(pc):
-        return float(pc) / 100000.0
+
+def _fill_table(apps):
 
     _logger.info("processing %s apps", len(apps))
     start_time = time()
@@ -57,7 +58,7 @@ def _fill_table(apps):
             app["appid"],
             app["name"],
             _make_searchable_name(app["name"]),
-            -1 if not "player_count" in response["response"] else search_prio(response['response']['player_count']),
+            -1 if not "player_count" in response["response"] else _search_prio(response['response']['player_count']),
             int(time())
         )
 
