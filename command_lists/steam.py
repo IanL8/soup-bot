@@ -23,10 +23,9 @@ def _get_apps():
         f"&include_games=true&max_results=50000&format=json")
     response = request.json()
 
-    have_more_results = True
     temp_apps = [] if not "apps" in response["response"].keys() else response["response"]["apps"]
 
-    while have_more_results:
+    while response["response"].get("have_more_results"):
         request = requests.get(
             f"https://api.steampowered.com/IStoreService/GetAppList/v1/"
             f"?key={constants.STEAM_API_KEY}&include_games=true&max_results=50000"
@@ -36,7 +35,6 @@ def _get_apps():
 
         if "apps" in response["response"].keys():
             temp_apps.extend(response["response"]["apps"])
-        have_more_results = response["response"].get("have_more_results")
 
     return temp_apps
 
