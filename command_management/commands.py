@@ -1,12 +1,14 @@
-from discord import app_commands, Interaction
-from abc import ABC, abstractmethod
-import inspect
+from discord import Interaction as _Interaction
+from discord import app_commands as _app_commands
+from abc import ABC as _ABC
+from abc import abstractmethod as _abstractmethod
+import inspect as _inspect
 
-from .context import Context
-from soup_util import soup_logging
+from .context import Context as _Context
+from soup_util import soup_logging as _soup_logging
 
 
-_logger = soup_logging.get_logger()
+_logger = _soup_logging.get_logger()
 
 
 class _CommandDataWrapper:
@@ -28,10 +30,10 @@ def command(name:str, desc:str="...", autocomplete_fields:{str:list[str]}= None)
 
     def decorator(f:callable):
 
-        parameters = str(inspect.signature(f))
+        parameters = str(_inspect.signature(f))
         parameters = parameters[parameters.index("context") + 8:-1].strip()
 
-        args = str(inspect.getfullargspec(f).args)
+        args = str(_inspect.getfullargspec(f).args)
         args = args[args.index("'context'") + 10:-1].replace("'", "").strip()
 
         _all_commands[f] = _CommandDataWrapper(name, desc, autocomplete_fields, parameters, args)
@@ -40,12 +42,13 @@ def command(name:str, desc:str="...", autocomplete_fields:{str:list[str]}= None)
     return decorator
 
 
-class CommandList(ABC):
+class CommandList(_ABC):
 
     name: str = "default"
 
-    def __init__(self):
+    def __init__(self, client):
         self.app_commands: [callable] = []
+        self.client = client
 
         for value in self.__class__.__dict__.values():
             if value in _all_commands.keys():
@@ -57,11 +60,11 @@ class CommandList(ABC):
         scope = dict(locals().copy(), **globals().copy())
 
         exec(
-            f"@app_commands.command(name=command_data.name, description=command_data.desc[:100])\n"
-            f"async def app_wrapper(interaction:Interaction, {command_data.parameters}): "
+            f"@_app_commands.command(name=command_data.name, description=command_data.desc[:100])\n"
+            f"async def app_wrapper(interaction:_Interaction, {command_data.parameters}): "
             f"args = [{command_data.args}];"
             f"_logger.info('%s %s',command_data.name, '' if len(args) == 0 else str(args));"
-            f"return await function(self, Context(interaction=interaction), {command_data.args});",
+            f"return await function(self, _Context(interaction=interaction), {command_data.args});",
             scope
         )
 
@@ -71,13 +74,17 @@ class CommandList(ABC):
                 scope["choices"] = choices
                 exec(
                     f"@app_wrapper.autocomplete(field_name)\n"
-                    f"async def field_name_autocomplete(interaction:Interaction, current:str) -> list[app_commands.Choice[str]]: "
-                    f"return [app_commands.Choice(name=c, value=c) for c in choices if current.lower() in c.lower()][:25]",
+                    f"async def field_name_autocomplete(interaction:_Interaction, current:str) -> list[_app_commands.Choice[str]]: "
+                    f"return [_app_commands.Choice(name=c, value=c) for c in choices if current.lower() in c.lower()][:25]",
                     scope
                 )
 
         return scope["app_wrapper"]
 
-    @abstractmethod
-    def on_close(self):
+    @_abstractmethod
+    async def on_start(self):
+        pass
+
+    @_abstractmethod
+    async def on_close(self):
         pass

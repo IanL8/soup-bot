@@ -13,7 +13,10 @@ class CommandList(commands.CommandList):
 
     name = "translator commands"
 
-    def on_close(self):
+    async def on_start(self):
+        pass
+
+    async def on_close(self):
         deepl_translator.close()
 
     @commands.command("translate",

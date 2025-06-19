@@ -11,7 +11,6 @@ def init_database():
         "CREATE TABLE IF NOT EXISTS Guilds("
         "gid INTEGER NOT NULL, "
         "flag VARCHAR(10) DEFAULT '!', "
-        "general_chat INTEGER, "
         "PRIMARY KEY (gid) "
         ");"
     )
@@ -26,7 +25,7 @@ def init_database():
     )
     _soup_sql.query(
         conn,
-        "CREATE TABLE IF NOT EXISTS UserTimers("
+        "CREATE TABLE IF NOT EXISTS UserCooldowns("
         "tid VARCHAR(100) NOT NULL, "
         "uid INTEGER NOT NULL, "
         "start_time INT DEFAULT 0, "
@@ -53,6 +52,17 @@ def init_database():
         "search_priority DOUBLE, "
         "last_update_time INTEGER UNSIGNED, "
         "PRIMARY KEY (app_id) "
+        ");"
+    )
+    _soup_sql.query(
+        conn,
+        "CREATE TABLE IF NOT EXISTS UserTimers("
+        "timer_id INTEGER PRIMARY KEY ASC, "
+        "uid INTEGER NOT NULL, "
+        "name VARCHAR(200), "
+        "channel_id INTEGER NOT NULL, "
+        "end_time INTEGER, "
+        "FOREIGN KEY (uid) REFERENCES Users(uid) ON DELETE CASCADE"
         ");"
     )
     conn.commit()

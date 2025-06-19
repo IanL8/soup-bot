@@ -47,9 +47,7 @@ def query(conn, query_str, values=tuple(), flatten_results=True) -> _QueryResult
     return _QueryResult(True, _flatten_query_results(ret) if flatten_results else ret)
 
 
-def add_member(conn, uid, gid) -> bool:
-    """Add a user to the db. Returns True if successful, False otherwise."""
+def add_member(conn, uid, gid):
+    """Adds a user to the db."""
 
-    results = query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (uid, gid,))
-
-    return results.is_success
+    query(conn, "INSERT INTO Users (uid, gid) VALUES (?, ?);", (uid, gid,))

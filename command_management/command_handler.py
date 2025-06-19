@@ -26,6 +26,10 @@ class CommandHandler:
 
         return tree
 
-    def close(self):
+    async def start(self):
         for command_list in self.command_lists:
-            command_list.on_close()
+            await command_list.on_start()
+
+    async def close(self):
+        for command_list in self.command_lists:
+            await command_list.on_close()

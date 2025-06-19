@@ -1,6 +1,4 @@
 from discord import Interaction
-import functools
-import typing
 
 
 class Context:
@@ -24,18 +22,13 @@ class Context:
         await self._interaction.response.defer()
         self._deferred = True
 
-    async def run_blocking_func(self, func: typing.Callable, *args, **kwargs):
-        """Use on all long blocking functions to avoid locking up the main thread the bot runs on. Returns the result."""
-
-        return await self.bot.loop.run_in_executor(None, functools.partial(func, *args, **kwargs))
-
-    async def send_message(self, text:str):
+    async def send_message(self, text:str, **args):
         """Send the user a message. Returns the message object. Can only call once per command."""
 
         if self._deferred:
-            await self._interaction.followup.send(text)
+            await self._interaction.followup.send(text, **args)
         else:
-            await self._interaction.response.send_message(text)
+            await self._interaction.response.send_message(text, **args)
 
         return await self._interaction.original_response()
 

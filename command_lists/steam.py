@@ -2,6 +2,7 @@ import requests
 import threading
 from time import sleep, time
 import re
+import asyncio
 
 from command_management import commands
 from database.database_management import db_steam_apps
@@ -22,10 +23,9 @@ def _get_apps():
         f"&include_games=true&max_results=50000&format=json")
     response = request.json()
 
-    have_more_results = True
-    temp_apps = response["response"]["apps"]
+    temp_apps = [] if not "apps" in response["response"].keys() else response["response"]["apps"]
 
-    while have_more_results:
+    while "have_more_results" in response["response"].keys():
         request = requests.get(
             f"https://api.steampowered.com/IStoreService/GetAppList/v1/"
             f"?key={constants.STEAM_API_KEY}&include_games=true&max_results=50000"
@@ -33,16 +33,17 @@ def _get_apps():
         )
         response = request.json()
 
-        temp_apps.extend(response["response"]["apps"])
-        have_more_results = response["response"].get("have_more_results")
+        if "apps" in response["response"].keys():
+            temp_apps.extend(response["response"]["apps"])
 
     return temp_apps
 
 
-def _fill_table(apps):
+def _search_prio(pc):
+    return float(pc) / 100000.0
 
-    def search_prio(pc):
-        return float(pc) / 100000.0
+
+def _fill_table(apps):
 
     _logger.info("processing %s apps", len(apps))
     start_time = time()
@@ -57,11 +58,11 @@ def _fill_table(apps):
             app["appid"],
             app["name"],
             _make_searchable_name(app["name"]),
-            -1 if not "player_count" in response["response"] else search_prio(response['response']['player_count']),
+            -1 if not "player_count" in response["response"] else _search_prio(response['response']['player_count']),
             int(time())
         )
 
-    _logger.info("finished processing apps at %s seconds", time() - start_time)
+    _logger.info("finished processing apps in %s seconds", time() - start_time)
 
 
 def _background_apps_refresh(is_running):
@@ -105,7 +106,10 @@ class CommandList(commands.CommandList):
 
     name = "steam commands"
 
-    def on_close(self):
+    async def on_start(self):
+        pass
+
+    async def on_close(self):
         global _is_running
         _is_running = False
 
@@ -113,7 +117,7 @@ class CommandList(commands.CommandList):
     async def get_player_count(self, context, name: str):
         await context.defer_message()
 
-        apps = await context.run_blocking_func(db_steam_apps.search, name, _make_searchable_name(name))
+        apps = await asyncio.to_thread(db_steam_apps.search, name, _make_searchable_name(name))
 
         if len(apps) == 0:
             await context.send_message(f"No steam games with the name *{name}*")
@@ -135,5 +139,4 @@ class CommandList(commands.CommandList):
             await context.send_message(f"No player count is currently available for the app *{app['name']}*")
             return
 
-        await context.send_message(
-            f"*{app['name']}* currently has {response['response']['player_count']} players online")
+        await context.send_message(f"*{app['name']}* currently has {response['response']['player_count']} players online")
