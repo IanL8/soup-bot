@@ -1,66 +1,150 @@
 import time
 import asyncio
 
+from discord import ui, SelectOption, Interaction
+
 from command_management import commands
+from database.database_management import db_timers
+
+
+def _gather_usable_channels(mem1, mem2, text_channels):
+    channels = []
+
+    for channel in text_channels:
+        if channel.permissions_for(mem1).send_messages and channel.permissions_for(mem1).view_channel \
+                and channel.permissions_for(mem2).send_messages and channel.permissions_for(mem2).view_channel:
+            channels.append(channel)
+
+    return channels
+
+
+def _duration_str_to_seconds(text):
+    current_number = ""
+    total_seconds = 0
+
+    if not any(c.isalpha() for c in text):
+        text += "m"
+
+    for character in text:
+        if character.isdigit():
+            current_number += character
+            continue
+        elif not character.isalpha() or current_number == "":
+            continue
+
+        match character:
+            case "s":
+                total_seconds += int(current_number)
+                current_number = ""
+            case "m":
+                total_seconds += 60 * int(current_number)
+                current_number = ""
+            case "h":
+                total_seconds += 3600 * int(current_number)
+                current_number = ""
+            case "d":
+                total_seconds += 86400 * int(current_number)
+                current_number = ""
+
+    return total_seconds
+
+
+async def _timer(uid, name, channel, duration, timer_id):
+    if duration > 0:
+        await asyncio.sleep(duration)
+
+    await channel.send(f"{name} <@{uid}>")
+    db_timers.remove(timer_id)
+
+
+class _ChannelSelector(ui.Select):
+    def __init__(self, channels, duration, name):
+
+        self.channels = {f"{i+1}. {c.name}" : c for i, c in enumerate(channels)}
+        self.duration = duration
+        self.name = name
+
+        options = [SelectOption(label=label) for label in self.channels.keys()]
+
+        super().__init__(placeholder="Select a channel", max_values=1, min_values=1, options=options)
+
+    async def callback(self, interaction: Interaction):
+        channel = self.channels[self.values[0]]
+
+        await interaction.response.edit_message(content=f"**{channel.name}** selected", view=None)
+
+        timer_id = db_timers.add(interaction.user.id, interaction.guild.id, self.name, channel.id, int(time.time()) + self.duration)
+        asyncio.run_coroutine_threadsafe(
+            _timer(interaction.user.id, self.name, channel, self.duration, timer_id),
+            interaction.client.loop
+        )
+
+        await interaction.followup.send(f"Timer {f'**{self.name}** started.' if len(self.name) != 0 else 'started.'}")
+
+
+class _ChannelSelectorView(ui.View):
+    def __init__(self, channels, duration, name, timeout=180):
+        super().__init__(timeout=timeout)
+
+        self.add_item(_ChannelSelector(channels, duration, name))
 
 
 class CommandList(commands.CommandList):
 
     name = "time commands"
 
-    def on_close(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def on_start(self):
+        timers = db_timers.get_all()
+
+        for timer in timers:
+            channel = self.client.get_channel(timer["channel_id"])
+            asyncio.run_coroutine_threadsafe(
+                _timer(timer["uid"], timer["name"], channel, timer["end_time"] - time.time(), timer["timer_id"]),
+                self.client.loop
+            )
+
+    async def on_close(self):
         pass
 
-    @staticmethod
-    async def _timer(uid, name, channel, end_time):
-        while True:
-            await asyncio.sleep(0.9)
-
-            if int(time.time()) == end_time:
-                return await channel.send(f"{name} <@{uid}>")
-
-    @staticmethod
-    def _duration_str_to_seconds(text):
-        current_number = ""
-        total_seconds = 0
-
-        for character in text:
-            if character.isdigit():
-                current_number += character
-                continue
-            elif not character.isalpha() or current_number == "":
-                continue
-
-            match character:
-                case "s":
-                    total_seconds += int(current_number)
-                    current_number = ""
-                case "m":
-                    total_seconds += 60 * int(current_number)
-                    current_number = ""
-                case "h":
-                    total_seconds += 3600 * int(current_number)
-                    current_number = ""
-                case "d":
-                    total_seconds += 86400 * int(current_number)
-                    current_number = ""
-
-        return total_seconds
-
     @commands.command("timer", desc="Start a timer with a duration in [seconds, minutes, hours, days]")
-    async def timer_command(self, context, duration:str, name:str=""):
+    async def timer(self, context, duration:str, name:str=""):
 
-        duration_number = self._duration_str_to_seconds(duration.lower())
+        duration_seconds = _duration_str_to_seconds(duration.lower())
 
-        if duration_number <= 0:
-            await context.send_message("timer duration must be greater than 0")
+        if duration_seconds <= 0:
+            await context.send_message("Timer duration must be greater than 0.")
+            return
+        elif len(name) > 200:
+            await context.send_message(f"Timer name is {len(name) - 200} characters too long.")
+            return
+
+        can_use_channel = context.channel.permissions_for(context.guild.get_member(context.bot.user.id)).send_messages
+
+        if not can_use_channel:
+            channels = _gather_usable_channels(
+                context.guild.get_member(context.bot.user.id),
+                context.guild.get_member(context.author.id),
+                context.guild.text_channels
+            )
+
+            if len(channels) == 0:
+                await context.send_message("No available channels allow the bot to send messages.")
+                return
+
+            await context.send_message(
+                "The bot cannot send messages in this channel. Please select a channel to be notified in.",
+                view=_ChannelSelectorView(channels, duration_seconds, name),
+                ephemeral=True
+            )
 
         else:
+            timer_id = db_timers.add(context.author.id, context.guild.id, name, context.channel.id, int(time.time()) + duration_seconds)
             asyncio.run_coroutine_threadsafe(
-                self._timer(context.author.id, name, context.channel, int(time.time() + duration_number)),
+                _timer(context.author.id, name, context.channel, duration_seconds, timer_id),
                 context.bot.loop
             )
-            if len(name) == 0:
-                await context.confirm()
-            else:
-                await context.send_message(f"timer **{name}** started")
+
+            await context.send_message(f"Timer {f'**{name}** started.' if len(name) != 0 else 'started.'}")
