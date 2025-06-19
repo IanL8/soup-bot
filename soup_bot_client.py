@@ -25,7 +25,7 @@ class SoupBotClient(discord.Client):
 
         db_setup.init_database()
 
-    async def on_ready(self):
+    async def setup_hook(self):
         for guild in self.guilds:
             db_guilds.add(guild)
 
