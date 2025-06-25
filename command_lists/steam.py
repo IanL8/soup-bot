@@ -23,7 +23,12 @@ def _get_apps():
         f"&include_games=true&max_results=50000&format=json")
     response = request.json()
 
-    temp_apps = [] if not "apps" in response["response"].keys() else response["response"]["apps"]
+
+    if not "apps" in response["response"].keys():
+        sleep(30)
+        return _get_apps()
+
+    temp_apps = response["response"]["apps"]
 
     while "have_more_results" in response["response"].keys():
         request = requests.get(
@@ -33,8 +38,11 @@ def _get_apps():
         )
         response = request.json()
 
-        if "apps" in response["response"].keys():
-            temp_apps.extend(response["response"]["apps"])
+        if not "apps" in response["response"].keys():
+            sleep(30)
+            return _get_apps()
+
+        temp_apps.extend(response["response"]["apps"])
 
     return temp_apps
 
