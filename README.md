@@ -1,4 +1,4 @@
-# soup bot
+# soupbot
 
 A multifunctional discord bot. 
 
