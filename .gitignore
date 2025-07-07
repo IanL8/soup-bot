@@ -1,0 +1,16 @@
+# extensions
+*.log
+*.db
+*.env
+
+# files
+.cache
+.python-version
+.DS_Store
+cookies.txt
+fortunes.txt
+
+# directories
+.idea/
+logs/
+__pycache__
