@@ -17,30 +17,40 @@ def _make_searchable_name(name):
     return re.sub("[^a-z0-9\s_]", "", name.lower())
 
 
-def _get_apps():
-    request = requests.get(
-        f"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={constants.STEAM_API_KEY}"
-        f"&include_games=true&max_results=50000&format=json")
+def _get_apps(previous=None):
+
+    if not previous is None and len(previous) > 0:
+        temp_apps = list(previous)
+        request = requests.get(
+            f"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={constants.STEAM_API_KEY}"
+            f"&include_games=true&max_results=50000&last_appid={previous[-1]['appid']}&format=json"
+        )
+    else:
+        temp_apps = list()
+        request = requests.get(
+            f"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={constants.STEAM_API_KEY}"
+            f"&include_games=true&max_results=50000&format=json"
+        )
+
     response = request.json()
 
-
     if not "apps" in response["response"].keys():
-        sleep(30)
-        return _get_apps()
+        sleep(1)
+        return _get_apps(temp_apps)
 
-    temp_apps = response["response"]["apps"]
+    temp_apps.extend(response["response"]["apps"])
 
     while "have_more_results" in response["response"].keys():
+        sleep(1)
         request = requests.get(
-            f"https://api.steampowered.com/IStoreService/GetAppList/v1/"
-            f"?key={constants.STEAM_API_KEY}&include_games=true&max_results=50000"
-            f"&last_appid={response['response']['last_appid']}&format=json"
+            f"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={constants.STEAM_API_KEY}"
+            f"&include_games=true&max_results=50000&last_appid={response['response']['last_appid']}&format=json"
         )
         response = request.json()
 
         if not "apps" in response["response"].keys():
-            sleep(30)
-            return _get_apps()
+            sleep(1)
+            return _get_apps(temp_apps)
 
         temp_apps.extend(response["response"]["apps"])
 
@@ -70,11 +80,14 @@ def _fill_table(apps):
             int(time())
         )
 
+        sleep(0.5)
+
     _logger.info("finished processing apps in %s seconds", time() - start_time)
 
 
 def _background_apps_refresh(is_running):
-    half_hour = 1800
+    HALF_HOUR = 1800
+    MAX_APPS = 55
 
     sleep(7) # wait for tables to be created in main thread
 
@@ -82,9 +95,11 @@ def _background_apps_refresh(is_running):
         _fill_table(_get_apps())
 
     while is_running():
+        start_time = time()
+
         apps = _get_apps()
         app_ids = db_steam_apps.get_all_app_ids()
-        app_ids_in_need_of_update = db_steam_apps.get_oldest_by_update_time(100)
+        app_ids_in_need_of_update = db_steam_apps.get_oldest_by_update_time(MAX_APPS)
 
         new_apps = []
         update_apps = []
@@ -96,7 +111,7 @@ def _background_apps_refresh(is_running):
             if app["appid"] in app_ids_in_need_of_update:
                 update_apps.append(app)
 
-        _fill_table(new_apps[:100] + update_apps)
+        _fill_table(new_apps[:MAX_APPS] + update_apps[:max(0, MAX_APPS - len(new_apps))])
 
         for app_id in app_ids:
             if not any(x["appid"] == app_id for x in apps):
@@ -104,7 +119,7 @@ def _background_apps_refresh(is_running):
 
         db_steam_apps.remove_all(removed_from_steam)
 
-        sleep(half_hour)
+        sleep(max(0.0, HALF_HOUR - (time() - start_time)))
 
 
 threading.Thread(target=_background_apps_refresh, args=(lambda: _is_running,), daemon=True).start()
