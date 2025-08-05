@@ -5,17 +5,6 @@ from . import _soup_sql
 from soup_util.constants import FORTUNES as _FORTUNES
 
 
-def _duration_to_string(duration) -> str:
-    time_readout = ""
-
-    for seconds, unit in [(86400, "days"), (3600, "hours"), (60, "minutes"), (1, "seconds")]:
-        unit_amount = int(duration / seconds)
-        duration = duration % seconds
-        time_readout += f"{unit_amount} {unit}, " if unit_amount > 0 else ""
-
-    return time_readout[:-2]
-
-
 def fortune(user) -> str:
     """Returns a random fortune, or time until next usage is available."""
 
@@ -43,3 +32,13 @@ def fortune(user) -> str:
     conn.commit()
     conn.close()
     return _choice(_FORTUNES)
+
+def _duration_to_string(duration) -> str:
+    time_readout = ""
+
+    for seconds, unit in [(86400, "days"), (3600, "hours"), (60, "minutes"), (1, "seconds")]:
+        unit_amount = int(duration / seconds)
+        duration = duration % seconds
+        time_readout += f"{unit_amount} {unit}, " if unit_amount > 0 else ""
+
+    return time_readout[:-2]

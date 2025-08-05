@@ -4,7 +4,7 @@ from discord import Interaction
 class Context:
     """A class defining the data a method containing a bot command is passed."""
 
-    def __init__(self, interaction:Interaction=None):
+    def __init__(self, interaction: Interaction = None):
         self._interaction = interaction
         self._deferred = False
         self.bot = interaction.client
@@ -22,7 +22,7 @@ class Context:
         await self._interaction.response.defer()
         self._deferred = True
 
-    async def send_message(self, text:str, **args):
+    async def send_message(self, text: str, **args):
         """Send the user a message. Returns the message object. Can only call once per command."""
 
         if self._deferred:

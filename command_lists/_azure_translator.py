@@ -1,48 +1,43 @@
-import requests
-import uuid
+import requests as _requests
+from uuid import uuid4 as _uuid4
 
-from soup_util.constants import AZURE_TRANSLATOR_SECRET_KEY, AZURE_TRANSLATOR_REGION, AZURE_TRANSLATION_KEY
+import soup_util.constants as _constants
 
 
-key = AZURE_TRANSLATOR_SECRET_KEY
-region = AZURE_TRANSLATOR_REGION
-
-url = "https://api.cognitive.microsofttranslator.com/"
-
-headers = {
-    "Ocp-Apim-Subscription-Key": key,
-    "Ocp-Apim-Subscription-Region": region,
+_HEADERS = {
+    "Ocp-Apim-Subscription-Key": _constants.AZURE_TRANSLATOR_SECRET_KEY,
+    "Ocp-Apim-Subscription-Region": _constants.AZURE_TRANSLATOR_REGION,
     "Content-type": "application/json",
-    "X-ClientTraceId": str(uuid.uuid4())
+    "X-ClientTraceId": str(_uuid4())
 }
 
 
-def azure_translate(text:str, from_lang:str, to_lang:str) -> str:
+def translate(text: str, from_lang: str, to_lang: str) -> str:
     params = {"api-version": "3.0", "to": []}
     body = [{"text": text}]
 
-    if from_lang.lower() in AZURE_TRANSLATION_KEY.keys():
-        params["from"] = AZURE_TRANSLATION_KEY[from_lang.lower()]
+    if from_lang.lower() in _constants.AZURE_TRANSLATION_KEY.keys():
+        params["from"] = _constants.AZURE_TRANSLATION_KEY[from_lang.lower()]
     elif from_lang != "auto":
-        return f"source language {from_lang} not a valid language"
+        return f"Source language {from_lang} is unsupported"
 
-    if to_lang.lower() in AZURE_TRANSLATION_KEY.keys():
-        params["to"].append(AZURE_TRANSLATION_KEY[to_lang.lower()])
+    if to_lang.lower() in _constants.AZURE_TRANSLATION_KEY.keys():
+        params["to"].append(_constants.AZURE_TRANSLATION_KEY[to_lang.lower()])
     else:
-        return f"target language {to_lang} not a valid language"
+        return f"Target language {to_lang} is unsupported"
 
-    request = requests.post(url + "translate", params=params, headers=headers, json=body)
+    request = _requests.post("https://api.cognitive.microsofttranslator.com/translate", params=params, headers=_HEADERS, json=body)
     response = request.json()
 
     if len(response) > 0:
         return response[0]["translations"][0]["text"]
     else:
-        return "not able to generate a translation"
+        return "Not able to generate a translation at this time"
 
-def azure_detect(text:str):
+def detect(text: str):
     params = {"api-version": "3.0"}
     body = [{"text": text}]
-    request = requests.post(url + "detect", params=params, headers=headers, json=body)
+    request = _requests.post("https://api.cognitive.microsofttranslator.com/detect", params=params, headers=_HEADERS, json=body)
     response = request.json()
 
     if len(response) > 0:

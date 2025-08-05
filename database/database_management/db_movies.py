@@ -11,7 +11,6 @@ def contains(guild, movie) -> bool:
     conn.close()
     return movie in movies
 
-
 def add(guild, movie):
     """Adds a movie to the db for this guild."""
 
@@ -26,7 +25,6 @@ def add(guild, movie):
     conn.commit()
     conn.close()
 
-
 def remove(guild, movie):
     """Removes the movie from the db for this guild. Returns True if successful, False otherwise."""
 
@@ -36,7 +34,6 @@ def remove(guild, movie):
 
     conn.commit()
     conn.close()
-
 
 def get_all(guild) -> list:
     """Return all movies for the given guild."""

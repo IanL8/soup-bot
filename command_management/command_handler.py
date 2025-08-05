@@ -1,17 +1,14 @@
 from discord import app_commands, Client
 
 from .commands import CommandList
-from soup_util import soup_logging
-
-
-_logger = soup_logging.get_logger()
+from soup_util.soup_logging import logger as _logger
 
 
 class CommandHandler:
     """Defines how the discord client adds commands."""
 
     def __init__(self):
-        self.command_lists : [CommandList] = []
+        self.command_lists: [CommandList] = []
 
     def add_command_list(self, command_list: CommandList):
         self.command_lists.append(command_list)

@@ -65,5 +65,6 @@ def init_database():
         "FOREIGN KEY (uid) REFERENCES Users(uid) ON DELETE CASCADE"
         ");"
     )
+
     conn.commit()
     conn.close()

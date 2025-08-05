@@ -1,105 +1,70 @@
-import requests
-import threading
-from time import sleep, time
-import re
-import asyncio
+import requests as _requests
+import threading as _threading
+import time as _time
+import asyncio as _asyncio
+from re import sub as _sub
 
-from command_management import commands
-from database.database_management import db_steam_apps
-from soup_util import constants, soup_logging
-
-
-_logger = soup_logging.get_logger()
-_is_running = True
+import command_management.commands as _commands
+import database.database_management.db_steam_apps as _db_steam_apps
+import soup_util.constants as _constants
+from soup_util.soup_logging import logger as _logger
 
 
-def _make_searchable_name(name):
-    return re.sub("[^a-z0-9\s_]", "", name.lower())
+_API_USE_COOLDOWN = 0.5
 
 
-def _get_apps(previous=None):
+class CommandList(_commands.CommandList):
 
-    if not previous is None and len(previous) > 0:
-        temp_apps = list(previous)
-        request = requests.get(
-            f"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={constants.STEAM_API_KEY}"
-            f"&include_games=true&max_results=50000&last_appid={previous[-1]['appid']}&format=json"
-        )
-    else:
-        temp_apps = list()
-        request = requests.get(
-            f"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={constants.STEAM_API_KEY}"
-            f"&include_games=true&max_results=50000&format=json"
-        )
+    name = "steam commands"
 
-    response = request.json()
+    async def on_start(self):
+        _threading.Thread(target=_background_apps_refresh, daemon=True).start()
 
-    if not "apps" in response["response"].keys():
-        sleep(1)
-        return _get_apps(temp_apps)
+    async def on_close(self):
+        pass
 
-    temp_apps.extend(response["response"]["apps"])
+    @_commands.command("player-count", desc="Get the player count of a steam game")
+    async def get_player_count(self, context, name: str):
+        await context.defer_message()
 
-    while "have_more_results" in response["response"].keys():
-        sleep(1)
-        request = requests.get(
-            f"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={constants.STEAM_API_KEY}"
-            f"&include_games=true&max_results=50000&last_appid={response['response']['last_appid']}&format=json"
+        apps = await _asyncio.to_thread(_db_steam_apps.search, name, _make_searchable_name(name))
+
+        if len(apps) == 0:
+            await context.send_message(f"No steam games with the name *{name}*")
+            return
+
+        index_of_highest_priority = 0
+        for i in range(len(apps)):
+            if apps[index_of_highest_priority]["search_priority"] < apps[i]["search_priority"]:
+                index_of_highest_priority = i
+
+        app = apps[index_of_highest_priority]
+
+        request = _requests.get(
+            f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={app['appid']}&format=json"
         )
         response = request.json()
 
-        if not "apps" in response["response"].keys():
-            sleep(1)
-            return _get_apps(temp_apps)
+        if "player_count" not in response["response"]:
+            await context.send_message(f"No player count is currently available for the app *{app['name']}*")
+            return
 
-        temp_apps.extend(response["response"]["apps"])
-
-    return temp_apps
+        await context.send_message(f"*{app['name']}* currently has {response['response']['player_count']} players online")
 
 
-def _search_prio(pc):
-    return float(pc) / 100000.0
-
-
-def _fill_table(apps):
-
-    _logger.info("processing %s apps", len(apps))
-    start_time = time()
-
-    for i, app in enumerate(apps):
-
-        request = requests.get(
-            f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={app['appid']}&format=json")
-        response = request.json()
-
-        db_steam_apps.add_or_update(
-            app["appid"],
-            app["name"],
-            _make_searchable_name(app["name"]),
-            -1 if not "player_count" in response["response"] else _search_prio(response['response']['player_count']),
-            int(time())
-        )
-
-        sleep(0.5)
-
-    _logger.info("finished processing apps in %s seconds", time() - start_time)
-
-
-def _background_apps_refresh(is_running):
+def _background_apps_refresh():
     HALF_HOUR = 1800
     MAX_APPS = 55
 
-    sleep(7) # wait for tables to be created in main thread
-
-    if db_steam_apps.is_empty():
+    if _db_steam_apps.is_empty():
         _fill_table(_get_apps())
 
-    while is_running():
-        start_time = time()
+    while True:
+        start_time = _time.time()
 
         apps = _get_apps()
-        app_ids = db_steam_apps.get_all_app_ids()
-        app_ids_in_need_of_update = db_steam_apps.get_oldest_by_update_time(MAX_APPS)
+        app_ids = _db_steam_apps.get_all_app_ids()
+        app_ids_in_need_of_update = _db_steam_apps.get_oldest_by_update_time(MAX_APPS)
 
         new_apps = []
         update_apps = []
@@ -117,49 +82,59 @@ def _background_apps_refresh(is_running):
             if not any(x["appid"] == app_id for x in apps):
                 removed_from_steam.append(app_id)
 
-        db_steam_apps.remove_all(removed_from_steam)
+        _db_steam_apps.remove_all(removed_from_steam)
 
-        sleep(max(0.0, HALF_HOUR - (time() - start_time)))
+        _time.sleep(max(0.0, HALF_HOUR - (_time.time() - start_time)))
 
+def _get_apps():
+    temp_apps = []
+    have_more_results = True
+    last_appid = None
 
-threading.Thread(target=_background_apps_refresh, args=(lambda: _is_running,), daemon=True).start()
+    while have_more_results:
+        _time.sleep(_API_USE_COOLDOWN)
 
+        request = _requests.get(
+            f"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={_constants.STEAM_API_KEY}"
+            f"&include_games=true&max_results=50000&format=json"
+            f"{f'&last_appid={last_appid}' if last_appid is not None else ''}"
+        )
+        response = request.json()
 
-class CommandList(commands.CommandList):
+        if "apps" in response["response"].keys():
+            temp_apps.extend(response["response"]["apps"])
+            have_more_results = "have_more_results" in response["response"].keys()
+            last_appid = response["response"].get("last_appid")
 
-    name = "steam commands"
+    return temp_apps
 
-    async def on_start(self):
-        pass
+def _fill_table(apps):
 
-    async def on_close(self):
-        global _is_running
-        _is_running = False
+    _logger.info("processing %s apps", len(apps))
+    start_time = _time.time()
 
-    @commands.command("player-count", desc="Get the player count of a steam game")
-    async def get_player_count(self, context, name: str):
-        await context.defer_message()
+    for i, app in enumerate(apps):
 
-        apps = await asyncio.to_thread(db_steam_apps.search, name, _make_searchable_name(name))
-
-        if len(apps) == 0:
-            await context.send_message(f"No steam games with the name *{name}*")
-            return
-
-        index_of_highest_priority = 0
-        for i in range(len(apps)):
-            if apps[index_of_highest_priority]["search_priority"] < apps[i]["search_priority"]:
-                index_of_highest_priority = i
-
-        app = apps[index_of_highest_priority]
-
-        request = requests.get(
+        request = _requests.get(
             f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={app['appid']}&format=json"
         )
         response = request.json()
 
-        if "player_count" not in response["response"]:
-            await context.send_message(f"No player count is currently available for the app *{app['name']}*")
-            return
+        _db_steam_apps.add_or_update(
+            app["appid"],
+            app["name"],
+            _make_searchable_name(app["name"]),
+            -1 if not "player_count" in response["response"] else _search_prio(response['response']['player_count']),
+            int(_time.time())
+        )
 
-        await context.send_message(f"*{app['name']}* currently has {response['response']['player_count']} players online")
+        _time.sleep(_API_USE_COOLDOWN)
+
+    _logger.info("finished processing apps in %.3f seconds", _time.time() - start_time)
+
+def _make_searchable_name(name):
+    return _sub("[^a-z0-9\s_]", "", name.lower())
+
+def _search_prio(player_count):
+    divisor = 100000.0 # very basic way of processing the player counts, as a more complex heuristic is overkill here
+    return float(player_count) / divisor
