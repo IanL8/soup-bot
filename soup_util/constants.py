@@ -1,37 +1,38 @@
-from os import getenv
-from dotenv import load_dotenv
-import json
+from os import getenv as _getenv
+from dotenv import load_dotenv as _load_dotenv
+import json as _json
 
 
 def _read_file_to_list(file_name):
     with open(file_name) as file:
         return [x.strip() for x in file.read().split("\n") if len(x.strip()) > 0]
 
-
 def _read_json_file_to_dict(file_name):
     with open(file_name) as file:
-        return json.load(file)
+        return _json.load(file)
 
 
-# env
-load_dotenv("resources/values.env")
-TOKEN = getenv("DISCORD_TOKEN")
-FFMPEG_EXE = getenv("FFMPEG_EXE")
-SPOTIPY_CLIENT_SECRET = getenv("SPOTIPY_CLIENT_SECRET")
-SPOTIPY_CLIENT_ID = getenv("SPOTIPY_CLIENT_ID")
-AZURE_TRANSLATOR_SECRET_KEY = getenv("AZURE_TRANSLATOR_KEY")
-AZURE_TRANSLATOR_REGION = getenv("AZURE_TRANSLATOR_REGION")
-DEEPL_API_KEY = getenv("DEEPL_API_KEY")
-STEAM_API_KEY = getenv("STEAM_API_KEY")
-YOUTUBE_API_KEY = getenv("YOUTUBE_API_KEY")
+# env file
+_load_dotenv("resources/.env")
+TOKEN = _getenv("DISCORD_TOKEN")
+FFMPEG_EXE = _getenv("FFMPEG_EXE")
+SPOTIPY_CLIENT_SECRET = _getenv("SPOTIPY_CLIENT_SECRET")
+SPOTIPY_CLIENT_ID = _getenv("SPOTIPY_CLIENT_ID")
+AZURE_TRANSLATOR_SECRET_KEY = _getenv("AZURE_TRANSLATOR_KEY")
+AZURE_TRANSLATOR_REGION = _getenv("AZURE_TRANSLATOR_REGION")
+DEEPL_API_KEY = _getenv("DEEPL_API_KEY")
+STEAM_API_KEY = _getenv("STEAM_API_KEY")
+YOUTUBE_API_KEY = _getenv("YOUTUBE_API_KEY")
 
-
+# txt files
 WORD_LIST = _read_file_to_list("resources/word_list.txt")
 FORTUNES = _read_file_to_list("resources/fortunes.txt")
 
+# json files
 AZURE_TRANSLATION_KEY = _read_json_file_to_dict("resources/azure_translation_key.json")
 DEEPL_TRANSLATION_KEY = _read_json_file_to_dict("resources/deepl_translation_key.json")
 
+# literals
 YDL_OPTIONS = {
     'quiet': True,
     'usenetrc': True,

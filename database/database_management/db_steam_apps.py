@@ -11,7 +11,6 @@ def is_empty() -> bool:
     conn.close()
     return _is_empty
 
-
 def add_or_update(app_id, name, searchable_name, search_priority, last_update_time):
     """Adds a steam app to SteamApps, or updates its data if its already in the table."""
 
@@ -33,7 +32,6 @@ def add_or_update(app_id, name, searchable_name, search_priority, last_update_ti
     conn.commit()
     conn.close()
 
-
 def get_all_app_ids() -> [int]:
     """Returns a list of all app ids in the table."""
 
@@ -43,7 +41,6 @@ def get_all_app_ids() -> [int]:
 
     conn.close()
     return values
-
 
 def get_oldest_by_update_time(amount) -> [int]:
     """Returns a list of the oldest [amount] app ids."""
@@ -57,7 +54,6 @@ def get_oldest_by_update_time(amount) -> [int]:
 
     conn.close()
     return values
-
 
 def remove_all(app_ids):
     """Removes all apps by app_id in the provided list."""

@@ -6,13 +6,11 @@ import inspect as _inspect
 
 from .context import Context as _Context
 from soup_util import soup_logging as _soup_logging
-
-
-_logger = _soup_logging.get_logger()
+from soup_util.soup_logging import logger as _logger
 
 
 class _CommandDataWrapper:
-    def __init__(self, name:str, desc:str, autocomplete_fields:{str:list[str]}, parameters:str, args:str):
+    def __init__(self, name: str, desc: str, autocomplete_fields: {str: list[str]}, parameters: str, args: str):
         self.name = name
         self.desc = desc
         self.autocomplete_fields = autocomplete_fields
@@ -20,15 +18,15 @@ class _CommandDataWrapper:
         self.args = args
 
 
-_all_commands: {callable:_CommandDataWrapper} = dict()
+_all_commands: {callable: _CommandDataWrapper} = dict()
 
 
-def command(name:str, desc:str="...", autocomplete_fields:{str:list[str]}= None):
+def command(name:str, desc: str="...", autocomplete_fields: {str: list[str]} = None):
     """Decorator for methods defining a discord bot command. Command must have the parameter 'context', be asynchronous, and
     be an instance method to a subclass of 'CommandList' in order to work correctly. Any parameters after context will be
     given as fields for the command and must be given a type."""
 
-    def decorator(f:callable):
+    def decorator(f: callable):
 
         parameters = str(_inspect.signature(f))
         parameters = parameters[parameters.index("context") + 8:-1].strip()
@@ -61,7 +59,7 @@ class CommandList(_ABC):
 
         exec(
             f"@_app_commands.command(name=command_data.name, description=command_data.desc[:100])\n"
-            f"async def app_wrapper(interaction:_Interaction, {command_data.parameters}): "
+            f"async def app_wrapper(interaction: _Interaction, {command_data.parameters}): "
             f"args = [{command_data.args}];"
             f"_logger.info('%s %s',command_data.name, '' if len(args) == 0 else str(args));"
             f"return await function(self, _Context(interaction=interaction), {command_data.args});",
@@ -74,7 +72,7 @@ class CommandList(_ABC):
                 scope["choices"] = choices
                 exec(
                     f"@app_wrapper.autocomplete(field_name)\n"
-                    f"async def field_name_autocomplete(interaction:_Interaction, current:str) -> list[_app_commands.Choice[str]]: "
+                    f"async def field_name_autocomplete(interaction: _Interaction, current: str) -> list[_app_commands.Choice[str]]: "
                     f"return [_app_commands.Choice(name=c, value=c) for c in choices if current.lower() in c.lower()][:25]",
                     scope
                 )

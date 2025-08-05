@@ -1,38 +1,35 @@
-import discord
+import discord as _discord
 
-from command_management.command_handler import CommandHandler
-from command_lists import general, music, timer, translator, steam
-
-from database.database_management import db_setup, db_guilds
-
-from soup_util import soup_logging
-
-
-_logger = soup_logging.get_logger()
+import command_lists as _clists
+import database.database_management.db_setup as _db_setup
+import database.database_management.db_guilds as _db_guilds
+from command_management.command_handler import CommandHandler as _CommandHandler
+from soup_util.soup_logging import logger as _logger
 
 
-class SoupBotClient(discord.Client):
+class SoupBotClient(_discord.Client):
 
     def __init__(self, **options):
         super().__init__(**options)
 
-        self.command_handler = CommandHandler()
-        self.command_handler.add_command_list(general.CommandList(self))
-        self.command_handler.add_command_list(music.CommandList(self))
-        self.command_handler.add_command_list(timer.CommandList(self))
-        self.command_handler.add_command_list(translator.CommandList(self))
-        self.command_handler.add_command_list(steam.CommandList(self))
+        self.command_handler = _CommandHandler()
 
-        db_setup.init_database()
+        self.command_handler.add_command_list(_clists.general.CommandList(self))
+        self.command_handler.add_command_list(_clists.music.CommandList(self))
+        self.command_handler.add_command_list(_clists.timer.CommandList(self))
+        self.command_handler.add_command_list(_clists.translator.CommandList(self))
+        self.command_handler.add_command_list(_clists.steam.CommandList(self))
+
+        _db_setup.init_database()
 
     async def setup_hook(self):
         for guild in self.guilds:
-            db_guilds.add(guild)
+            _db_guilds.add(guild)
 
         try:
             await self.command_handler.make_command_tree(self).sync()
 
-        except discord.errors.ClientException:
+        except _discord.errors.ClientException:
             _logger.warning("failed to create command tree", exc_info=True)
 
         await self.command_handler.start()
@@ -48,4 +45,4 @@ class SoupBotClient(discord.Client):
         _logger.info("%s has disconnected from Discord", self.user.name)
 
     async def on_guild_join(self, guild):
-        db_guilds.add(guild)
+        _db_guilds.add(guild)
