@@ -13,4 +13,5 @@ fortunes.txt
 # directories
 .idea/
 logs/
-__pycache__
+__pycache__/
+.venv/
