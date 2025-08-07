@@ -58,7 +58,7 @@ class CommandList(_commands.CommandList):
             )
 
         else:
-            timer_id = _db_timers.add(context.author.id, context.guild.id, name, context.channel.id, int(_time.time()) + duration_seconds)
+            timer_id = _db_timers.add(context.author.id, context.guild.id, name, context.channel.id, int(_time()) + duration_seconds)
             _asyncio.run_coroutine_threadsafe(
                 _timer(context.author.id, name, context.channel, duration_seconds, timer_id),
                 context.bot.loop
