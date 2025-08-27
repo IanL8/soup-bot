@@ -15,7 +15,7 @@ dependencies = [
     "pytube>=15.0.0",
     "requests>=2.32.4",
     "spotipy>=2.25.1",
-    "yt-dlp>=2025.6.30",
+    "yt-dlp>=2025.8.22",
 ]
 
 [tool.uv.sources]
