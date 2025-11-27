@@ -58,17 +58,20 @@ class Context:
 
 
 class _CommandDataWrapper:
-    def __init__(self, name: str, desc: str, autocomplete_fields: {str: list[str]}, partial_signature: str, parameters: str):
+    def __init__(self, name: str, desc: str, autocomplete_fields: {str: list[str]},
+                 dynamic_autocomplete: {str: callable}, partial_signature: str, parameters: str):
+
         self.name = name
         self.desc = desc
         self.autocomplete_fields = autocomplete_fields
+        self.dynamic_autocomplete = dynamic_autocomplete
         self.partial_signature = partial_signature
         self.parameters = parameters
 
 _all_commands: {callable: _CommandDataWrapper} = dict()
 
 
-def command(name:str, desc: str="...", autocomplete_fields: {str: list[str]} = None):
+def command(name:str, desc: str="...", autocomplete_fields: {str: list[str]} = None, dynamic_autocomplete: {str: callable} = None):
     """Decorator for methods defining a discord bot command. Command must have the parameter 'context', be asynchronous, and
     be an instance method to a subclass of 'CommandList' in order to work correctly. Any parameters after context will be
     given as fields for the command and must be given a type."""
@@ -77,7 +80,7 @@ def command(name:str, desc: str="...", autocomplete_fields: {str: list[str]} = N
         partial_signature = _reduce(lambda x, y: f"{x}, {y}", str(_inspect.signature(f))[1:-1].split(",")[2:] + [""])
         parameters = _reduce(lambda x, y: f"{x}, {y}", _inspect.getfullargspec(f).args[2:] + [""])
 
-        _all_commands[f] = _CommandDataWrapper(name, desc, autocomplete_fields, partial_signature, parameters)
+        _all_commands[f] = _CommandDataWrapper(name, desc, autocomplete_fields, dynamic_autocomplete, partial_signature, parameters)
         return f
 
     return decorator
@@ -123,6 +126,16 @@ class CommandList:
                     f"@app_wrapper.autocomplete(field_name)\n"
                     f"async def field_name_autocomplete(interaction: _Interaction, current: str) -> list[_app_commands.Choice[str]]:\n"
                     f"    return [_app_commands.Choice(name=c, value=c) for c in choices if current.lower() in c.lower()][:25]\n",
+                    scope
+                )
+        if command_data.dynamic_autocomplete is not None:
+            for field_name, autocomplete_function in command_data.dynamic_autocomplete.items():
+                scope["field_name"] = field_name
+                scope["autocomplete_function"] = autocomplete_function
+                exec(
+                    f"@app_wrapper.autocomplete(field_name)\n"
+                    f"async def field_name_autocomplete(interaction: _Interaction, current: str) -> list[_app_commands.Choice[str]]:\n"
+                    f"    return [_app_commands.Choice(name=c, value=c) for c in await autocomplete_function(current)][:25]\n",
                     scope
                 )
 
