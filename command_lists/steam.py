@@ -13,6 +13,14 @@ from soup_util.soup_logging import logger as _logger
 _API_USE_COOLDOWN = 0.5
 
 
+def _make_searchable_name(name):
+    return _sub("[^a-z0-9_]", "", name.lower())
+
+def _search_prio(player_count):
+    divisor = 100000.0 # very basic way of processing the player counts, as a more complex heuristic is overkill here
+    return float(player_count) / divisor
+
+
 class CommandList(_commands.CommandList):
 
     name = "steam commands"
@@ -20,11 +28,26 @@ class CommandList(_commands.CommandList):
     async def on_start(self):
         _threading.Thread(target=_background_apps_refresh, daemon=True).start()
 
-    @_commands.command("player-count", desc="Get the player count of a steam game")
+    @staticmethod
+    async def _autocomplete(current):
+        if len(current) < 3:
+            return []
+
+        choices = await _asyncio.to_thread(_db_steam_apps.search, searchable_name=_make_searchable_name(current.lower()))
+
+        return [c["name"] for c in choices[:25]]
+
+    @_commands.command("player-count",
+                       desc="Get the player count of a steam game. Autocomplete works after 3 characters.",
+                       dynamic_autocomplete={"name": _autocomplete})
     async def get_player_count(self, context, name: str):
         await context.defer_message()
 
-        apps = await _asyncio.to_thread(_db_steam_apps.search, name, _make_searchable_name(name))
+        apps = await _asyncio.to_thread(
+            _db_steam_apps.search,
+            app_name=name.lower(),
+            searchable_name=_make_searchable_name(name.lower())
+        )
 
         if len(apps) == 0:
             raise _commands.CommandError(f"No steam games with the name *{name}*.")
@@ -126,10 +149,3 @@ def _fill_table(apps):
         _time.sleep(_API_USE_COOLDOWN)
 
     _logger.info("finished processing apps in %.3f seconds", _time.time() - start_time)
-
-def _make_searchable_name(name):
-    return _sub("[^a-z0-9\s_]", "", name.lower())
-
-def _search_prio(player_count):
-    divisor = 100000.0 # very basic way of processing the player counts, as a more complex heuristic is overkill here
-    return float(player_count) / divisor
