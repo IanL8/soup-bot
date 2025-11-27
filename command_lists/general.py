@@ -11,15 +11,9 @@ class CommandList(_commands.CommandList):
 
     name = "general commands"
 
-    async def on_start(self):
-        pass
-
-    async def on_close(self):
-        pass
-
     @_commands.command("hello", desc="Says hi to the user")
     async def hello(self, context):
-        await context.send_message(f"Hiii :3 {context.author.display_name}")
+        await context.send_message(f"hiii :3 {context.author.display_name}")
 
     @_commands.command("true")
     async def truer(self, context):
@@ -35,6 +29,10 @@ class CommandList(_commands.CommandList):
     @_commands.command("coinflip", desc="Flip a coin")
     async def coinflip(self, context):
         await context.send_message("Heads" if int(_random.random()*2) == 1 else "Tails")
+
+    @_commands.command("wordle-guess", desc="Gives a random word from the pool of possible Wordle answers")
+    async def wordle_guess(self, context):
+        await context.send_message(f"Good luck! ||{_random.choice(_constants.WORDLE_LIST)}||")
 
     @_commands.command("word", desc="Get a random word")
     async def word(self, context):
@@ -76,7 +74,7 @@ class CommandList(_commands.CommandList):
 
         else:
             member = context.guild.get_member_named(username)
-            message = str(member.avatar) if member else "No such user exists"
+            message = str(member.avatar) if member else "No such user exists."
 
         await context.send_message(message)
 
@@ -87,7 +85,7 @@ class CommandList(_commands.CommandList):
     @_commands.command("movie-add", desc="Add a movie to the movie list")
     async def add_movie(self, context, name: str):
         if _db_movies.contains(context.guild, name):
-            await context.send_message("Movie already in list")
+            raise _commands.CommandError("Movie already in list.")
 
         _db_movies.add(context.guild, name)
         await context.confirm()
@@ -95,7 +93,7 @@ class CommandList(_commands.CommandList):
     @_commands.command("movie-remove", desc="Remove a movie from the movie list")
     async def remove_movie(self, context, name: str):
         if not _db_movies.contains(context.guild, name):
-            await context.send_message("Movie not in list")
+            raise _commands.CommandError("Movie not in list.")
 
         _db_movies.remove(context.guild, name)
         await context.confirm()
@@ -105,6 +103,6 @@ class CommandList(_commands.CommandList):
         movies = _db_movies.get_all(context.guild)
 
         if not movies:
-            await context.send_message("No movies in the list")
-        else:
-            await context.send_message("```\n" + _reduce(lambda x, y: f"{x}\n{y}", movies[:100]) + "\n```")
+            await _commands.CommandError("No movies in the list.")
+
+        await context.send_message("```\n" + _reduce(lambda x, y: f"{x}\n{y}", movies[:100]) + "\n```")
