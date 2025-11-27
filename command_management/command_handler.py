@@ -5,7 +5,6 @@ from soup_util.soup_logging import logger as _logger
 
 
 class CommandHandler:
-    """Defines how the discord client adds commands."""
 
     def __init__(self):
         self.command_lists: [CommandList] = []

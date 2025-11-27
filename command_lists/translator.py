@@ -17,9 +17,6 @@ class CommandList(_commands.CommandList):
 
     name = "translator commands"
 
-    async def on_start(self):
-        pass
-
     async def on_close(self):
         _deepl_translator.close()
 
@@ -40,12 +37,11 @@ class CommandList(_commands.CommandList):
             source_lang = _azure_translator.detect(text)
 
             if source_lang is None:
-                await context.send_message("not able to generate a translation")
-                return
+                raise _commands.CommandError("Not able to generate a translation.")
+
             elif source_lang not in _constants.DEEPL_TRANSLATION_KEY["source"].values():
                 await context.send_message(_azure_translator.translate(text, from_language, to_language))
                 return
-
         else:
             source_lang = _constants.DEEPL_TRANSLATION_KEY["source"][from_language.lower()]
 

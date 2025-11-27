@@ -1,22 +1,69 @@
 from discord import Interaction as _Interaction
 from discord import app_commands as _app_commands
-from abc import ABC as _ABC
-from abc import abstractmethod as _abstractmethod
+from functools import reduce as _reduce
 import inspect as _inspect
 
-from .context import Context as _Context
-from soup_util import soup_logging as _soup_logging
 from soup_util.soup_logging import logger as _logger
 
 
+class CommandError(Exception):
+
+    def __init__(self, message):
+        super().__init__(message)
+
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
+class Context:
+    """Mainly a wrapper for data a command is passed, but has some methods."""
+
+    def __init__(self, interaction: _Interaction = None):
+        self._interaction = interaction
+        self._deferred = False
+        self.bot = interaction.client
+        self.channel = interaction.channel
+        self.author = interaction.user
+        self.guild = interaction.guild
+        self.mentions = []
+
+        if "resolved" in interaction.data.keys():
+            self.mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["users"].keys()]
+
+    async def defer_message(self):
+        """Use near the start of the method if the time required to produce a message is longer than 3 seconds."""
+
+        await self._interaction.response.defer()
+        self._deferred = True
+
+    async def send_message(self, text: str, **args):
+        """Sends the user a message. Returns the message object. Can only call once per command."""
+
+        if self._deferred:
+            await self._interaction.followup.send(text, **args)
+        else:
+            await self._interaction.response.send_message(text, **args)
+
+        return await self._interaction.original_response()
+
+    async def confirm(self):
+        """Gives the user a confirmation that the command was a success."""
+
+        if self._deferred:
+            await self._interaction.followup.send("✅")
+        else:
+            await self._interaction.response.send_message("✅")
+
+
 class _CommandDataWrapper:
-    def __init__(self, name: str, desc: str, autocomplete_fields: {str: list[str]}, parameters: str, args: str):
+    def __init__(self, name: str, desc: str, autocomplete_fields: {str: list[str]}, partial_signature: str, parameters: str):
         self.name = name
         self.desc = desc
         self.autocomplete_fields = autocomplete_fields
+        self.partial_signature = partial_signature
         self.parameters = parameters
-        self.args = args
-
 
 _all_commands: {callable: _CommandDataWrapper} = dict()
 
@@ -27,20 +74,17 @@ def command(name:str, desc: str="...", autocomplete_fields: {str: list[str]} = N
     given as fields for the command and must be given a type."""
 
     def decorator(f: callable):
+        partial_signature = _reduce(lambda x, y: f"{x}, {y}", str(_inspect.signature(f))[1:-1].split(",")[2:] + [""])
+        parameters = _reduce(lambda x, y: f"{x}, {y}", _inspect.getfullargspec(f).args[2:] + [""])
 
-        parameters = str(_inspect.signature(f))
-        parameters = parameters[parameters.index("context") + 8:-1].strip()
-
-        args = str(_inspect.getfullargspec(f).args)
-        args = args[args.index("'context'") + 10:-1].replace("'", "").strip()
-
-        _all_commands[f] = _CommandDataWrapper(name, desc, autocomplete_fields, parameters, args)
+        _all_commands[f] = _CommandDataWrapper(name, desc, autocomplete_fields, partial_signature, parameters)
         return f
 
     return decorator
 
 
-class CommandList(_ABC):
+class CommandList:
+    """Subclass this to create groups of similar discord commands."""
 
     name: str = "default"
 
@@ -50,19 +94,24 @@ class CommandList(_ABC):
 
         for value in self.__class__.__dict__.values():
             if value in _all_commands.keys():
-                command_data = _all_commands.pop(value)
-
-                self.app_commands.append(self._generate_app_command(command_data, value))
+                self.app_commands.append(self._generate_app_command(_all_commands.pop(value), value))
 
     def _generate_app_command(self, command_data, function):
         scope = dict(locals().copy(), **globals().copy())
 
         exec(
             f"@_app_commands.command(name=command_data.name, description=command_data.desc[:100])\n"
-            f"async def app_wrapper(interaction: _Interaction, {command_data.parameters}): "
-            f"args = [{command_data.args}];"
-            f"_logger.info('%s %s',command_data.name, '' if len(args) == 0 else str(args));"
-            f"return await function(self, _Context(interaction=interaction), {command_data.args});",
+            f"async def app_wrapper(interaction: _Interaction, {command_data.partial_signature}):\n"
+            f"    args = [{command_data.parameters}]\n"
+            f"    context = Context(interaction=interaction)\n"
+            f"    _logger.info('%s %s',command_data.name, '' if len(args) == 0 else str(args))\n"
+            f"    try:\n"
+            f"        await function(self, context, {command_data.parameters})\n"
+            f"    except CommandError as err:\n"
+            f"        await self.error_handler(context, err)\n"
+            f"    except Exception as e:\n"
+            f"        _logger.warning(str(e), exc_info=True)\n"
+            f"        await context.send_message('Oh no! **' + self.client.user.name + '** has ran into an error :(')\n",
             scope
         )
 
@@ -72,17 +121,18 @@ class CommandList(_ABC):
                 scope["choices"] = choices
                 exec(
                     f"@app_wrapper.autocomplete(field_name)\n"
-                    f"async def field_name_autocomplete(interaction: _Interaction, current: str) -> list[_app_commands.Choice[str]]: "
-                    f"return [_app_commands.Choice(name=c, value=c) for c in choices if current.lower() in c.lower()][:25]",
+                    f"async def field_name_autocomplete(interaction: _Interaction, current: str) -> list[_app_commands.Choice[str]]:\n"
+                    f"    return [_app_commands.Choice(name=c, value=c) for c in choices if current.lower() in c.lower()][:25]\n",
                     scope
                 )
 
         return scope["app_wrapper"]
 
-    @_abstractmethod
     async def on_start(self):
         pass
 
-    @_abstractmethod
     async def on_close(self):
         pass
+
+    async def error_handler(self, context: Context, error: CommandError):
+        await context.send_message(str(error))

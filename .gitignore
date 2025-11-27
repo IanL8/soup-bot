@@ -9,6 +9,8 @@
 .DS_Store
 cookies.txt
 fortunes.txt
+word_list.txt
+wordle_list.txt
 
 # directories
 .idea/
