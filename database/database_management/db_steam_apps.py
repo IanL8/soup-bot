@@ -67,8 +67,8 @@ def remove_all(app_ids):
     conn.close()
 
 def search(app_name = None, searchable_name = None) -> [dict]:
-    """Search the table of steam games by searchable_name for potential matches, or by exact app name with app_name.
-    Returns the best matches, or an empty list if nothing is found. Each element in the returned list is a
+    """Search the table of steam games by exact app name with app_name or if applicable by searchable_name for potential
+    matches. Returns the best matches, or an empty list if nothing is found. Each element in the returned list is a
     dictionary with the keys 'appid', 'name' and 'search_priority'. The list is sorted descending by search_priority."""
 
     if app_name is None and searchable_name is None:
@@ -76,7 +76,7 @@ def search(app_name = None, searchable_name = None) -> [dict]:
 
     conn = _soup_sql.connect()
 
-    # check for perfect match
+    apps = []
     if app_name is not None:
         apps = _soup_sql.query(
             conn,
@@ -84,7 +84,7 @@ def search(app_name = None, searchable_name = None) -> [dict]:
             (app_name,),
             False
         ).values
-    else:
+    if len(apps) == 0 and searchable_name is not None:
         apps = _soup_sql.query(
             conn,
             "SELECT app_id, name, search_priority FROM SteamApps WHERE LOWER(name) LIKE ? ORDER BY search_priority DESC;",
