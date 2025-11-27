@@ -10,9 +10,6 @@ class CommandList(_commands.CommandList):
 
     name = "time commands"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     async def on_start(self):
         timers = _db_timers.get_all()
 
@@ -23,20 +20,15 @@ class CommandList(_commands.CommandList):
                 self.client.loop
             )
 
-    async def on_close(self):
-        pass
-
     @_commands.command("timer", desc="Start a timer with a duration in [seconds, minutes, hours, days]")
     async def timer(self, context, duration: str, name: str = ""):
 
         duration_seconds = _duration_str_to_seconds(duration.lower())
 
         if duration_seconds <= 0:
-            await context.send_message("Timer duration must be greater than 0.")
-            return
+            raise _commands.CommandError("Timer duration must be greater than 0.")
         elif len(name) > 200:
-            await context.send_message(f"Timer name is {len(name) - 200} characters too long.")
-            return
+            raise _commands.CommandError(f"Timer name is {len(name) - 200} characters too long.")
 
         can_use_channel = context.channel.permissions_for(context.guild.get_member(context.bot.user.id)).send_messages
 
@@ -48,8 +40,7 @@ class CommandList(_commands.CommandList):
             )
 
             if len(channels) == 0:
-                await context.send_message("No available channels allow the bot to send messages.")
-                return
+                raise _commands.CommandError("No available channels allow the bot to send messages.")
 
             await context.send_message(
                 "The bot cannot send messages in this channel. Please select a channel to be notified in.",
