@@ -20,9 +20,6 @@ class CommandList(_commands.CommandList):
     async def on_start(self):
         _threading.Thread(target=_background_apps_refresh, daemon=True).start()
 
-    async def on_close(self):
-        pass
-
     @_commands.command("player-count", desc="Get the player count of a steam game")
     async def get_player_count(self, context, name: str):
         await context.defer_message()
@@ -30,8 +27,7 @@ class CommandList(_commands.CommandList):
         apps = await _asyncio.to_thread(_db_steam_apps.search, name, _make_searchable_name(name))
 
         if len(apps) == 0:
-            await context.send_message(f"No steam games with the name *{name}*")
-            return
+            raise _commands.CommandError(f"No steam games with the name *{name}*.")
 
         index_of_highest_priority = 0
         for i in range(len(apps)):
@@ -46,10 +42,9 @@ class CommandList(_commands.CommandList):
         response = request.json()
 
         if "player_count" not in response["response"]:
-            await context.send_message(f"No player count is currently available for the app *{app['name']}*")
-            return
+            raise _commands.CommandError(f"No player count is currently available for the app *{app['name']}*.")
 
-        await context.send_message(f"*{app['name']}* currently has {response['response']['player_count']} players online")
+        await context.send_message(f"*{app['name']}* currently has {response['response']['player_count']} players online.")
 
 
 def _background_apps_refresh():
