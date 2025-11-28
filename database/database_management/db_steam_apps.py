@@ -87,8 +87,13 @@ def search(app_name = None, searchable_name = None) -> [dict]:
     if len(apps) == 0 and searchable_name is not None:
         apps = _soup_sql.query(
             conn,
-            "SELECT app_id, name, search_priority FROM SteamApps WHERE LOWER(name) LIKE ? ORDER BY search_priority DESC;",
-            (f"%{searchable_name}%",),
+            "SELECT app_id, name, search_priority\n"
+            "FROM (SELECT *\n"
+            "      FROM SteamApps\n"
+            "      WHERE LOWER(name) LIKE ? OR searchable_name LIKE ?\n"
+            "      LIMIT 100) as temp\n"
+            "ORDER BY search_priority DESC LIMIT 25;",
+            (f"%{searchable_name}%", f"%{searchable_name}%"),
             False
         ).values
 

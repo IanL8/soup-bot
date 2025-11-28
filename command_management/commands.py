@@ -6,6 +6,10 @@ import inspect as _inspect
 from soup_util.soup_logging import logger as _logger
 
 
+_AUTOCOMPLETE_NAME_CHAR_LIMIT = 100
+_AUTOCOMPLETE_LIMIT = 25
+
+
 class CommandError(Exception):
 
     def __init__(self, message):
@@ -135,7 +139,8 @@ class CommandList:
                 exec(
                     f"@app_wrapper.autocomplete(field_name)\n"
                     f"async def field_name_autocomplete(interaction: _Interaction, current: str) -> list[_app_commands.Choice[str]]:\n"
-                    f"    return [_app_commands.Choice(name=c, value=c) for c in await autocomplete_function(current)][:25]\n",
+                    f"    choices = [c[:_AUTOCOMPLETE_NAME_CHAR_LIMIT] for c in await autocomplete_function(current)]\n"
+                    f"    return [_app_commands.Choice(name=c, value=c) for c in choices[:_AUTOCOMPLETE_LIMIT]]\n",
                     scope
                 )
 

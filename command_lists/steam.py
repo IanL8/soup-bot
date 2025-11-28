@@ -14,10 +14,10 @@ _API_USE_COOLDOWN = 0.5
 
 
 def _make_searchable_name(name):
-    return _sub("[^a-z0-9_]", "", name.lower())
+    return _sub("[^a-z0-9_\s]", "", name.lower())
 
 def _search_prio(player_count):
-    divisor = 100000.0 # very basic way of processing the player counts, as a more complex heuristic is overkill here
+    divisor = 100000.0 # very basic way of processing the player counts
     return float(player_count) / divisor
 
 
@@ -33,9 +33,9 @@ class CommandList(_commands.CommandList):
         if len(current) < 3:
             return []
 
-        choices = await _asyncio.to_thread(_db_steam_apps.search, searchable_name=_make_searchable_name(current.lower()))
+        choices = await _asyncio.to_thread(_db_steam_apps.search, searchable_name=_make_searchable_name(current))
 
-        return [c["name"] for c in choices[:25]]
+        return [c["name"] for c in choices]
 
     @_commands.command("player-count",
                        desc="Get the player count of a steam game. Autocomplete works after 3 characters.",
