@@ -4,6 +4,7 @@ from functools import reduce as _reduce
 import command_management.commands as _commands
 import database.database_management.db_movies as _db_movies
 import database.database_management.db_cooldowns as _db_cooldowns
+import database.database_management.db_guilds as _db_guilds
 import soup_util.constants as _constants
 
 
@@ -106,3 +107,23 @@ class CommandList(_commands.CommandList):
             await _commands.CommandError("No movies in the list.")
 
         await context.send_message("```\n" + _reduce(lambda x, y: f"{x}\n{y}", movies[:100]) + "\n```")
+
+    @_commands.command("prefix", desc="Gets the current command prefix.")
+    async def get_prefix(self, context):
+        if context.guild is None:
+            await context.send_message("The command prefix in direct messages is '!'.")
+            return
+
+        await context.send_message(f"The command prefix for *{context.guild.name}* is '{_db_guilds.get_prefix(context.guild)}'.")
+
+    @_commands.command("change-prefix", desc="Allows the server owner to change the prefix used for non-slash commands")
+    async def change_prefix(self, context, prefix: str):
+        if context.guild is None:
+            raise _commands.CommandError("This command cannot be used in direct messages.")
+        if context.author.id != context.guild.owner.id:
+            raise _commands.CommandError("Only the server owner can use this command.")
+        if len(prefix) > 4:
+            raise _commands.CommandError("A prefix must be 4 characters or less.")
+
+        _db_guilds.set_prefix(context.guild, prefix)
+        await context.confirm()
