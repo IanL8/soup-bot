@@ -61,8 +61,7 @@ def init_database():
         "uid INTEGER NOT NULL, "
         "name VARCHAR(200), "
         "channel_id INTEGER NOT NULL, "
-        "end_time INTEGER, "
-        "FOREIGN KEY (uid) REFERENCES Users(uid) ON DELETE CASCADE"
+        "end_time INTEGER "
         ");"
     )
 

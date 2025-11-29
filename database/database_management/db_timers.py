@@ -1,13 +1,10 @@
 from . import _soup_sql
 
 
-def add(uid, gid, name, channel_id, end_time) -> int:
+def add(uid, name, channel_id, end_time) -> int:
     """Adds a new timer. Returns the corresponding timer_id."""
 
     conn = _soup_sql.connect()
-
-    if not uid in _soup_sql.query(conn, "SELECT uid FROM Users WHERE gid=?;", (gid,)).values:
-        _soup_sql.add_member(conn, uid, gid)
 
     timer_id = _soup_sql.query(
         conn,
@@ -30,7 +27,7 @@ def remove(timer_id):
     conn.commit()
     conn.close()
 
-def get_all() -> [dict]:
+def get_all() -> list[dict]:
     """Returns a list of all active timers. Each element is a dictionary with the keys 'uid', 'name', 'channel_id',
     'end_time', and 'timer_id'."""
 
