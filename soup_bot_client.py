@@ -46,3 +46,13 @@ class SoupBotClient(_discord.Client):
 
     async def on_guild_join(self, guild):
         _db_guilds.add(guild)
+
+    async def on_message(self, message):
+        prefix = "!" if message.guild is None else _db_guilds.get_prefix(message.guild)
+
+        if not (message.author == self.user or len(message.content) == 0) and message.content.startswith(prefix):
+
+            command_name = message.content.split(" ").pop(0)[len(prefix):]
+
+            if command_name in self.command_handler.basic_command_names:
+                await self.command_handler.pass_command(command_name, message, self)

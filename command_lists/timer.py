@@ -30,7 +30,7 @@ class CommandList(_commands.CommandList):
         elif len(name) > 200:
             raise _commands.CommandError(f"Timer name is {len(name) - 200} characters too long.")
 
-        can_use_channel = context.channel.permissions_for(context.guild.get_member(context.bot.user.id)).send_messages
+        can_use_channel = context.guild is None or context.channel.permissions_for(context.guild.get_member(context.bot.user.id)).send_messages
 
         if not can_use_channel:
             channels = _gather_usable_channels(
@@ -47,9 +47,8 @@ class CommandList(_commands.CommandList):
                 view=_ChannelSelectorView(channels, duration_seconds, name),
                 ephemeral=True
             )
-
         else:
-            timer_id = _db_timers.add(context.author.id, context.guild.id, name, context.channel.id, int(_time()) + duration_seconds)
+            timer_id = _db_timers.add(context.author.id, name, context.channel.id, int(_time()) + duration_seconds)
             _asyncio.run_coroutine_threadsafe(
                 _timer(context.author.id, name, context.channel, duration_seconds, timer_id),
                 context.bot.loop
@@ -79,7 +78,7 @@ class _ChannelSelector(_discord.ui.Select):
 
         await interaction.response.edit_message(content=f"**{channel.name}** selected", view=None)
 
-        timer_id = _db_timers.add(interaction.user.id, interaction.guild.id, self.name, channel.id, int(_time()) + self.duration)
+        timer_id = _db_timers.add(interaction.user.id, self.name, channel.id, int(_time()) + self.duration)
         _asyncio.run_coroutine_threadsafe(
             _timer(interaction.user.id, self.name, channel, self.duration, timer_id),
             interaction.client.loop

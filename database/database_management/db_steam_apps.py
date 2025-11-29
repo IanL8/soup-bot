@@ -1,6 +1,10 @@
 from . import _soup_sql
 
 
+_SEARCH_LIMIT = 100
+_RESULT_LIMIT = 25
+
+
 def is_empty() -> bool:
     """Returns True if the table is empty. If not, returns False"""
 
@@ -91,9 +95,9 @@ def search(app_name = None, searchable_name = None) -> [dict]:
             "FROM (SELECT *\n"
             "      FROM SteamApps\n"
             "      WHERE LOWER(name) LIKE ? OR searchable_name LIKE ?\n"
-            "      LIMIT 100) as temp\n"
-            "ORDER BY search_priority DESC LIMIT 25;",
-            (f"%{searchable_name}%", f"%{searchable_name}%"),
+            "      LIMIT ?) as temp\n"
+            "ORDER BY search_priority DESC LIMIT ?;",
+            (f"%{searchable_name}%", f"%{searchable_name}%", _SEARCH_LIMIT, _RESULT_LIMIT),
             False
         ).values
 
