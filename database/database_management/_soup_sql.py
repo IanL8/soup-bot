@@ -20,15 +20,15 @@ def query(conn, query_str, values=tuple(), flatten_results=True) -> _QueryResult
             ret = conn.execute(query_str, values).fetchall()
 
     except _sql.OperationalError as e1:
-        _logger.warning(str(e1), exc_info=True)
+        _logger.error(str(e1), exc_info=True)
         return _QueryResult(False, ())
 
     except _sql.IntegrityError as e2:
-        _logger.warning(str(e2), exc_info=True)
+        _logger.error(str(e2), exc_info=True)
         return _QueryResult(False, ())
 
     except _sql.Error as e3:
-        _logger.warning(str(e3), exc_info=True)
+        _logger.error(str(e3), exc_info=True)
         return _QueryResult(False, ())
 
     return _QueryResult(True, _flatten_query_results(ret) if flatten_results else ret)
