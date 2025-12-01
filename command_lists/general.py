@@ -1,11 +1,17 @@
 import random as _random
+import discord as _discord
 from functools import reduce as _reduce
+from math import ceil as _ceil
 
 import command_management.commands as _commands
 import database.database_management.db_movies as _db_movies
 import database.database_management.db_cooldowns as _db_cooldowns
 import database.database_management.db_guilds as _db_guilds
 import soup_util.constants as _constants
+from . import _ui_views
+
+
+_FIELD_LIMIT = 15
 
 
 class CommandList(_commands.CommandList):
@@ -31,7 +37,7 @@ class CommandList(_commands.CommandList):
     async def coinflip(self, context):
         await context.send_message("Heads" if int(_random.random()*2) == 1 else "Tails")
 
-    @_commands.command("wordle-guess", desc="Gives a random word from the pool of possible Wordle answers")
+    @_commands.command("wordle-guess", desc="Get a random word from the pool of possible Wordle answers")
     async def wordle_guess(self, context):
         await context.send_message(f"Good luck! ||{_random.choice(_constants.WORDLE_LIST)}||")
 
@@ -79,7 +85,7 @@ class CommandList(_commands.CommandList):
 
         await context.send_message(message)
 
-    @_commands.command("fortune", desc="Get a random fortune once per day")
+    @_commands.command("fortune", desc="Receive a random fortune once per day")
     async def fortune(self, context):
         await context.send_message(_db_cooldowns.fortune(context.author))
 
@@ -103,12 +109,27 @@ class CommandList(_commands.CommandList):
     async def movie_list(self, context):
         movies = _db_movies.get_all(context.guild)
 
-        if not movies:
-            await _commands.CommandError("No movies in the list.")
+        if len(movies) == 0:
+            raise _commands.CommandError("No movies in the list.")
 
-        await context.send_message("```\n" + _reduce(lambda x, y: f"{x}\n{y}", movies[:100]) + "\n```")
+        embeds = []
+        total_pages = _ceil(len(movies) / _FIELD_LIMIT)
 
-    @_commands.command("prefix", desc="Gets the current command prefix.")
+        for i in range(total_pages):
+            embeds.append(_discord.Embed(colour=_discord.Colour.dark_magenta(), title=f"Movies [{i+1}/{total_pages}]"))
+            embeds[i].set_image(url=_constants.EMBED_TRANSPARENT_IMAGE_URL)
+
+            for _ in range(len(movies) if len(movies) < _FIELD_LIMIT else _FIELD_LIMIT):
+                movie = movies.pop(0)
+
+                embeds[i].add_field(name=movie[:_ui_views.VALUE_CHAR_LIMIT], value="", inline=False)
+
+        if total_pages > 1:
+            await context.send_message("", embed=embeds[0], view=_ui_views.PagedEmbedView(embeds))
+        else:
+            await context.send_message("", embed=embeds[0])
+
+    @_commands.command("prefix", desc="Gets the current command prefix")
     async def get_prefix(self, context):
         if context.guild is None:
             await context.send_message("The command prefix in direct messages is '!'.")
@@ -120,9 +141,9 @@ class CommandList(_commands.CommandList):
     async def change_prefix(self, context, prefix: str):
         if context.guild is None:
             raise _commands.CommandError("This command cannot be used in direct messages.")
-        if context.author.id != context.guild.owner.id:
+        elif context.author.id != context.guild.owner.id:
             raise _commands.CommandError("Only the server owner can use this command.")
-        if len(prefix) > 4:
+        elif len(prefix) > 4:
             raise _commands.CommandError("A prefix must be 4 characters or less.")
 
         _db_guilds.set_prefix(context.guild, prefix)
