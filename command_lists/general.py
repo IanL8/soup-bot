@@ -72,7 +72,7 @@ class CommandList(_commands.CommandList):
         )
 
     @_commands.command("avatar", desc="Fetch a user's pfp by @ing them or writing their name. By default will return your avatar")
-    async def get_avatar(self, context, username: str=""):
+    async def get_avatar(self, context, username: str = ""):
         if len(username) == 0:
             message = str(context.author.avatar)
 
