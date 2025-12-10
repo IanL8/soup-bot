@@ -22,7 +22,7 @@ class CommandList(_commands.CommandList):
     async def hello(self, context):
         await context.send_message(f"hiii :3 {context.author.display_name}")
 
-    @_commands.command("true")
+    @_commands.command("true", desc="Gets the bot to agree with you")
     async def truer(self, context):
         await context.send_message("TRUE" if _random.random() > .49 else "NOT FALSE")
 
