@@ -15,7 +15,7 @@ _AUTOCOMPLETE = {
 
 class CommandList(_commands.CommandList):
 
-    name = "translator commands"
+    name = "Translator"
 
     async def on_close(self):
         _deepl_translator.close()

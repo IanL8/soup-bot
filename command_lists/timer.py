@@ -8,7 +8,7 @@ import database.database_management.db_timers as _db_timers
 
 class CommandList(_commands.CommandList):
 
-    name = "time commands"
+    name = "Timer"
 
     async def on_start(self):
         timers = _db_timers.get_all()

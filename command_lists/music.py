@@ -24,7 +24,7 @@ _FIELD_LIMIT = 10
 
 class CommandList(_commands.CommandList):
 
-    name = "music commands"
+    name = "Music"
 
     def __init__(self, *args):
         super().__init__(*args)

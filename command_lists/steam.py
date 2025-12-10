@@ -23,7 +23,7 @@ def _search_prio(player_count):
 
 class CommandList(_commands.CommandList):
 
-    name = "steam commands"
+    name = "Steam"
 
     async def on_start(self):
         _threading.Thread(target=_background_apps_refresh, daemon=True).start()

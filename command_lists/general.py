@@ -16,7 +16,7 @@ _FIELD_LIMIT = 15
 
 class CommandList(_commands.CommandList):
 
-    name = "general commands"
+    name = "General"
 
     @_commands.command("hello", desc="Says hi to the user")
     async def hello(self, context):
