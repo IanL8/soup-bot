@@ -57,12 +57,14 @@ class CommandList(_commands.CommandList):
             await context.send_message(f"Timer {f'**{name}** started.' if len(name) != 0 else 'started.'}")
 
 class _ChannelSelectorView(_discord.ui.View):
+
     def __init__(self, channels, duration, name, timeout=180):
         super().__init__(timeout=timeout)
 
         self.add_item(_ChannelSelector(channels, duration, name))
 
 class _ChannelSelector(_discord.ui.Select):
+
     def __init__(self, channels, duration, name):
 
         self.channels = {f"{i+1}. {c.name}" : c for i, c in enumerate(channels)}
