@@ -20,7 +20,7 @@ class CommandList(_commands.CommandList):
                 self.client.loop
             )
 
-    @_commands.command("timer", desc="Start a timer with a duration in [seconds, minutes, hours, days]")
+    @_commands.command("timer", desc="Starts a timer with a duration in [seconds, minutes, hours, days]. Can optionally supply a name.")
     async def timer(self, context, duration: str, name: str = ""):
 
         duration_seconds = _duration_str_to_seconds(duration.lower())

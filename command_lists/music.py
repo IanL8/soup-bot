@@ -111,14 +111,14 @@ class CommandList(_commands.CommandList):
             player.store("text-channel", context.channel.id)
             await context.author.voice.channel.connect(cls=_lavalink_voice_protocol.LavalinkVoiceClient)
 
-    @_commands.command("join", desc="Makes the bot join your voice channel")
+    @_commands.command("join", desc="Makes the bot join your voice channel.")
     async def join(self, context):
         player = await self._create_player(context)
         await self._connect_to_voice(player, context)
 
         await context.confirm()
 
-    @_commands.command("leave", desc="Makes the bot leave its voice channel")
+    @_commands.command("leave", desc="Makes the bot leave its voice channel.")
     async def leave(self, context):
         if not context.guild.voice_client in context.bot.voice_clients:
             raise _commands.CommandError("Bot is not in a voice channel.")
@@ -131,7 +131,7 @@ class CommandList(_commands.CommandList):
         await context.guild.voice_client.disconnect(force=False)
         await context.confirm()
 
-    @_commands.command("play", desc="Plays music. Supports youtube/spotify/apple/soundcloud links or keyword searches")
+    @_commands.command("play", desc="Plays music. Supports youtube/spotify/apple/soundcloud links or keyword searches.")
     async def play(self, context, media: str):
         player = await self._create_player(context)
         await self._connect_to_voice(player, context)
@@ -157,7 +157,7 @@ class CommandList(_commands.CommandList):
 
         await context.confirm()
 
-    @_commands.command("shuffle", desc="Toggles on/off queue shuffle")
+    @_commands.command("shuffle", desc="Toggles on/off queue shuffle.")
     async def shuffle(self, context):
         player = await self._create_player(context)
 
@@ -169,7 +169,7 @@ class CommandList(_commands.CommandList):
         player.set_shuffle(shuffle)
         await context.send_message(f"Shuffle {'on' if shuffle else 'off'}.")
 
-    @_commands.command("loop-queue", desc="Toggles on/off queue loop")
+    @_commands.command("loop-queue", desc="Toggles on/off queue loop.")
     async def loop_queue(self, context):
         player = await self._create_player(context)
 
@@ -184,7 +184,7 @@ class CommandList(_commands.CommandList):
         player.set_loop(loop)
         await context.send_message(f"Queue looping {'on' if loop == 2 else 'off'}.")
 
-    @_commands.command("loop-track", desc="Toggles on/off single track loop")
+    @_commands.command("loop-track", desc="Toggles on/off single track loop.")
     async def loop_track(self, context):
         player = await self._create_player(context)
 
@@ -196,7 +196,7 @@ class CommandList(_commands.CommandList):
         player.set_loop(loop)
         await context.send_message(f"Track looping {'on' if loop == 1 else 'off'}.")
 
-    @_commands.command("pause", desc="Pause the current track")
+    @_commands.command("pause", desc="Pauses the current track.")
     async def pause(self, context):
         player = await self._create_player(context)
 
@@ -208,7 +208,7 @@ class CommandList(_commands.CommandList):
         await player.set_pause(True)
         await context.confirm()
 
-    @_commands.command("resume", desc="Resume the current track")
+    @_commands.command("resume", desc="Resumes the current track.")
     async def resume(self, context):
         player = await self._create_player(context)
 
@@ -220,7 +220,7 @@ class CommandList(_commands.CommandList):
         await player.set_pause(False)
         await context.confirm()
 
-    @_commands.command("skip", desc="Skip the current track")
+    @_commands.command("skip", desc="Skips the current track.")
     async def skip(self, context):
         player = await self._create_player(context)
 
@@ -230,7 +230,7 @@ class CommandList(_commands.CommandList):
         await player.skip()
         await context.confirm()
 
-    @_commands.command("queue", desc="Displays the queue")
+    @_commands.command("queue", desc="Displays the queue.")
     async def queue(self, context):
         player = await self._create_player(context)
 

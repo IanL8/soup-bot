@@ -38,7 +38,7 @@ class CommandList(_commands.CommandList):
         return [c["name"] for c in choices]
 
     @_commands.command("player-count",
-                       desc="Get the player count of a steam game. Autocomplete works after 3 characters.",
+                       desc="Gets the player count of a steam game. Autocomplete works after 3 characters.",
                        dynamic_autocomplete={"name": _autocomplete})
     async def get_player_count(self, context, name: str):
         await context.defer_message()
