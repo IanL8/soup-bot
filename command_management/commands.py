@@ -159,17 +159,17 @@ class CommandList:
         return basic_command
 
     @_final
-    def _generate_app_command(self, command_data, function):
+    def _generate_app_command(self, cmd, function):
         scope = dict(locals().copy(), **globals().copy())
 
         exec(
-            f"@_discord.app_commands.command(name=command_data.name, description=command_data.desc[:100])\n"
-            f"async def app_wrapper(interaction: _discord.Interaction, {command_data.partial_signature}):\n"
-            f"    args = [{command_data.parameters}]\n"
+            f"@_discord.app_commands.command(name=cmd.name, description=cmd.desc[:100])\n"
+            f"async def app_wrapper(interaction: _discord.Interaction, {cmd.partial_signature}):\n"
+            f"    args = [{cmd.parameters}]\n"
             f"    context = Context(interaction=interaction)\n"
-            f"    _logger.info('%s %s',command_data.name, '' if len(args) == 0 else str(args))\n"
+            f"    _logger.info('%s %s',cmd.name, '' if len(args) == 0 else str(args))\n"
             f"    try:\n"
-            f"        await function(self, context, {command_data.parameters})\n"
+            f"        await function(self, context, {cmd.parameters})\n"
             f"    except CommandError as err:\n"
             f"        await self.error_handler(context, err)\n"
             f"    except Exception as e:\n"
@@ -178,18 +178,19 @@ class CommandList:
             scope
         )
 
-        if command_data.autocomplete_fields is not None:
-            for field_name, choices in command_data.autocomplete_fields.items():
+        if cmd.autocomplete_fields is not None:
+            for field_name, choices in cmd.autocomplete_fields.items():
                 scope["field_name"] = field_name
                 scope["choices"] = choices
                 exec(
                     f"@app_wrapper.autocomplete(field_name)\n"
                     f"async def field_name_autocomplete(interaction: _discord.Interaction, current: str) -> list[_discord.app_commands.Choice[str]]:\n"
-                    f"    return [_discord.app_commands.Choice(name=c, value=c) for c in choices if current.lower() in c.lower()][:25]\n",
+                    f"    choices_temp = [c[:_AUTOCOMPLETE_NAME_CHAR_LIMIT] for c in choices if current.lower() in c.lower()]\n"
+                    f"    return [_discord.app_commands.Choice(name=c, value=c) for c in choices_temp[:_AUTOCOMPLETE_LIMIT]]\n",
                     scope
                 )
-        if command_data.dynamic_autocomplete is not None:
-            for field_name, autocomplete_function in command_data.dynamic_autocomplete.items():
+        if cmd.dynamic_autocomplete is not None:
+            for field_name, autocomplete_function in cmd.dynamic_autocomplete.items():
                 scope["field_name"] = field_name
                 scope["autocomplete_function"] = autocomplete_function
                 exec(
