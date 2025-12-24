@@ -55,7 +55,12 @@ class CommandList(_commands.CommandList):
         if category not in self.categories:
             raise _commands.CommandError("Invalid category.")
 
-        await context.send_message("", embed=self.embeds[category][0], view=_HelpMenuView(self.embeds, category, 1200))
+        view = _HelpMenuView(self.embeds, category, 1200)
+        message = await context.send_message("", embed=self.embeds[category][0], view=view)
+
+        await view.wait()
+        view.disable_items()
+        await message.edit(view=view)
 
 
 class _HelpMenuView(_ui_views.PagedEmbedView):

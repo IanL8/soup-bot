@@ -7,6 +7,7 @@ VALUE_CHAR_LIMIT = 1024
 
 
 class PagedEmbedView(_discord.ui.View):
+
     def __init__(self, embeds, timeout=600, row = None):
         super().__init__(timeout=timeout)
 
@@ -25,6 +26,10 @@ class PagedEmbedView(_discord.ui.View):
             lambda interaction: self.right_arrow_action(interaction),
             row=row
         ))
+
+    def disable_items(self) -> None:
+        for c in self.children:
+            c.disabled = True
 
     async def left_arrow_action(self, interaction):
         self.embed_index = (self.embed_index - 1) % len(self.embeds)
