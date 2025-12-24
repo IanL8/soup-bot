@@ -9,6 +9,8 @@ from soup_util.soup_logging import logger as _logger
 _AUTOCOMPLETE_NAME_CHAR_LIMIT = 100
 _AUTOCOMPLETE_LIMIT = 25
 
+command_display_data = {}
+
 
 class CommandError(Exception):
 
@@ -133,9 +135,16 @@ class CommandList:
         self.client = client
         self.commands: list[_Command] = []
 
+        command_display_data[self.name] = []
+
         for value in self.__class__.__dict__.values():
             if value in _all_commands.keys():
                 cmd = _all_commands.pop(value)
+
+                command_display_data[self.name].append(
+                    {"name": cmd.name, "description": cmd.desc, "basic_compatible": cmd.basic_compatible}
+                )
+
                 self.commands.append(_Command(
                     cmd.name,
                     cmd.desc,
