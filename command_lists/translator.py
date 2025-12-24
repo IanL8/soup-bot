@@ -15,13 +15,13 @@ _AUTOCOMPLETE = {
 
 class CommandList(_commands.CommandList):
 
-    name = "translator commands"
+    name = "Translator"
 
     async def on_close(self):
         _deepl_translator.close()
 
     @_commands.command("translate",
-                       desc="Translates some provided text. Can optionally supply languages to translate to or from",
+                       desc="Translates some provided text. Can optionally supply languages to translate to or from.",
                        autocomplete_fields=_AUTOCOMPLETE)
     async def translate_text(self, context, text: str, from_language: str = "auto", to_language: str = "english"):
         # deepl has better translations, but has bad auto-detection and worse coverage than azure

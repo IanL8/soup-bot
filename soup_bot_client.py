@@ -19,6 +19,7 @@ class SoupBotClient(_discord.Client):
         self.command_handler.add_command_list(_clists.timer.CommandList(self))
         self.command_handler.add_command_list(_clists.translator.CommandList(self))
         self.command_handler.add_command_list(_clists.steam.CommandList(self))
+        self.command_handler.add_command_list(_clists.help.CommandList(self))
 
         _db_setup.init_database()
 

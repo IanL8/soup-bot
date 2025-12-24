@@ -8,7 +8,7 @@ import database.database_management.db_timers as _db_timers
 
 class CommandList(_commands.CommandList):
 
-    name = "time commands"
+    name = "Timer"
 
     async def on_start(self):
         timers = _db_timers.get_all()
@@ -20,7 +20,7 @@ class CommandList(_commands.CommandList):
                 self.client.loop
             )
 
-    @_commands.command("timer", desc="Start a timer with a duration in [seconds, minutes, hours, days]")
+    @_commands.command("timer", desc="Starts a timer with a duration in [seconds, minutes, hours, days]. Can optionally supply a name.")
     async def timer(self, context, duration: str, name: str = ""):
 
         duration_seconds = _duration_str_to_seconds(duration.lower())
@@ -57,12 +57,14 @@ class CommandList(_commands.CommandList):
             await context.send_message(f"Timer {f'**{name}** started.' if len(name) != 0 else 'started.'}")
 
 class _ChannelSelectorView(_discord.ui.View):
+
     def __init__(self, channels, duration, name, timeout=180):
         super().__init__(timeout=timeout)
 
         self.add_item(_ChannelSelector(channels, duration, name))
 
 class _ChannelSelector(_discord.ui.Select):
+
     def __init__(self, channels, duration, name):
 
         self.channels = {f"{i+1}. {c.name}" : c for i, c in enumerate(channels)}
