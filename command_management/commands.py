@@ -9,10 +9,22 @@ from soup_util.soup_logging import logger as _logger
 _AUTOCOMPLETE_NAME_CHAR_LIMIT = 100
 _AUTOCOMPLETE_LIMIT = 25
 
+_DEFAULT_COMMAND_LIST_NAME = "default"
+
 command_display_data = {}
 
 
 class CommandError(Exception):
+
+    def __init__(self, message):
+        super().__init__(message)
+
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+class _CommandGenerationError(Exception):
 
     def __init__(self, message):
         super().__init__(message)
@@ -110,6 +122,9 @@ def command(name: str, desc: str="...", autocomplete_fields: {str: list[str]} = 
         partial_signature = _reduce(lambda x, y: f"{x}, {y}", str(_inspect.signature(f))[1:-1].split(",")[2:] + [""])
         parameters = _reduce(lambda x, y: f"{x}, {y}", _inspect.getfullargspec(f).args[2:] + [""])
 
+        if any(value.name == name for value in _all_commands.values()):
+            raise _CommandGenerationError(f"Multiple commands exist with the same name, '{name}'.")
+
         _all_commands[f] = _CommandTempDataWrapper(name, desc, autocomplete_fields, dynamic_autocomplete, partial_signature, parameters)
         return f
 
@@ -129,11 +144,17 @@ class _Command:
 class CommandList:
     """Subclass this to create groups of similar discord commands."""
 
-    name: str = "default"
+    name: str = _DEFAULT_COMMAND_LIST_NAME
 
     def __init__(self, client):
         self.client = client
         self.commands: list[_Command] = []
+
+        if any(key == self.name for key in command_display_data.keys()):
+            raise _CommandGenerationError(f"Multiple commands lists exist with the same name, '{self.name}'.")
+
+        if self.name == _DEFAULT_COMMAND_LIST_NAME:
+            _logger.warn(f"A command list with the default name exists. Consider giving it a descriptive name.")
 
         command_display_data[self.name] = []
 
