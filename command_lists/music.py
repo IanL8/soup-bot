@@ -134,7 +134,6 @@ class CommandList(_commands.CommandList):
     @_commands.command("play", desc="Plays music. Supports youtube/spotify/apple/soundcloud links or keyword searches.")
     async def play(self, context, media: str):
         player = await self._create_player(context)
-        await self._connect_to_voice(player, context)
         await context.defer_message()
 
         if not _url_rx.match(media):
@@ -144,6 +143,9 @@ class CommandList(_commands.CommandList):
 
         if result.load_type == _lavalink.LoadType.EMPTY:
             raise _commands.CommandError("No tracks found.")
+        elif result.load_type == _lavalink.LoadType.ERROR:
+            raise _commands.CommandError("Error fetching media from URL. Please verify the URL is a valid YouTube, "
+                                         "Spotify, Apple Music, or SoundCloud link and try again.")
         elif result.load_type == _lavalink.LoadType.PLAYLIST:
             for track in result.tracks:
                 track.extra["requester"] = context.author.id
@@ -151,6 +153,8 @@ class CommandList(_commands.CommandList):
         else:
             result.tracks[0].extra["requester"] = context.author.id
             player.add(track=result.tracks[0])
+
+        await self._connect_to_voice(player, context)
 
         if not player.is_playing:
             await player.play()
