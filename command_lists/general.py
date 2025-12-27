@@ -126,11 +126,11 @@ class CommandList(_commands.CommandList):
 
         if total_pages > 1:
             view = _ui_views.PagedEmbedView(embeds)
-            message = await context.send_message("", embed=embeds[0], view=view)
+            await context.send_message("", embed=embeds[0], view=view)
 
             await view.wait()
             view.disable_items()
-            await message.edit(view=view)
+            await context.edit_message(view=view)
         else:
             await context.send_message("", embed=embeds[0])
 
