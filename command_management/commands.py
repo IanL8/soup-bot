@@ -88,6 +88,19 @@ class Context:
         self._sent_message = await self._interaction.original_response()
         return self._sent_message
 
+    async def edit_message(self, **args):
+        """Edits the message sent to the user, with keyword arguments supported by discord.Message.edit(). If used
+        before sending a message, does nothing."""
+
+        if not self._sent_message:
+            return
+
+        if self._is_basic_command:
+            await self._sent_message.edit(**args)
+        else:
+            raw_message = await self._sent_message.fetch()
+            await raw_message.edit(**args)
+
     async def confirm(self):
         """Gives the user a confirmation that the command was a success. Sends a message if the user sent an app
         command, otherwise just reacts to the message."""
