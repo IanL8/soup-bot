@@ -1,5 +1,6 @@
 import discord as _discord
 from math import ceil as _ceil
+import asyncio as _asyncio
 
 import command_management.commands as _commands
 import soup_util.constants as _constants
@@ -56,11 +57,11 @@ class CommandList(_commands.CommandList):
             raise _commands.CommandError("Invalid category.")
 
         view = _HelpMenuView(self.embeds, category, 1200)
-        message = await context.send_message("", embed=self.embeds[category][0], view=view)
+        await context.send_message("", embed=self.embeds[category][0], view=view)
 
         await view.wait()
         view.disable_items()
-        await message.edit(view=view)
+        await context.edit_message(view=view)
 
 
 class _HelpMenuView(_ui_views.PagedEmbedView):

@@ -64,6 +64,8 @@ class Context:
             self.guild = message.guild
             self.mentions = []
 
+        self._sent_message = None
+
     async def defer_message(self):
         """Use near the start of the method if the time required to produce a message is longer than 3 seconds. Does
         nothing if the command sent was basic."""
@@ -76,13 +78,28 @@ class Context:
         """Sends the user a message. Returns the message object. Only call once per command."""
 
         if self._is_basic_command:
-            return await self.channel.send(text, **args)
+            self._sent_message = await self.channel.send(text, **args)
+            return self._sent_message
         elif self._deferred:
             await self._interaction.followup.send(text, **args)
         else:
             await self._interaction.response.send_message(text, **args)
 
-        return await self._interaction.original_response()
+        self._sent_message = await self._interaction.original_response()
+        return self._sent_message
+
+    async def edit_message(self, **args):
+        """Edits the message sent to the user, with keyword arguments supported by discord.Message.edit(). If used
+        before sending a message, does nothing."""
+
+        if not self._sent_message:
+            return
+
+        if self._is_basic_command:
+            await self._sent_message.edit(**args)
+        else:
+            raw_message = await self._sent_message.fetch()
+            await raw_message.edit(**args)
 
     async def confirm(self):
         """Gives the user a confirmation that the command was a success. Sends a message if the user sent an app
