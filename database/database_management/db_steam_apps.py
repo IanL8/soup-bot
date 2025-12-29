@@ -30,7 +30,7 @@ def add_or_update(app_id, name, searchable_name, search_priority, last_update_ti
 
     conn = _soup_sql.connect()
 
-    if app_id in _soup_sql.query(conn, "SELECT app_id FROM SteamApps;").values:
+    if len(_soup_sql.query(conn, "SELECT app_id FROM SteamApps WHERE app_id=?;", (app_id,)).values) != 0:
         _soup_sql.query(
                 conn,
                 "UPDATE SteamApps SET name=?, searchable_name=?, search_priority=?, last_update_time=? WHERE app_id=?;",
