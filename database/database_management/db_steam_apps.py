@@ -15,6 +15,16 @@ def is_empty() -> bool:
     conn.close()
     return empty
 
+def contains(app_id) -> bool:
+    """Returns true if this app is in the table. If not, returns false."""
+
+    conn = _soup_sql.connect()
+
+    c = len(_soup_sql.query(conn, "SELECT app_id FROM SteamApps WHERE app_id=?", (app_id,)).values) != 0
+
+    conn.close()
+    return c
+
 def add_or_update(app_id, name, searchable_name, search_priority, last_update_time):
     """Adds a steam app to SteamApps, or updates its data if its already in the table."""
 
