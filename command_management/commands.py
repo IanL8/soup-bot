@@ -49,10 +49,13 @@ class Context:
             self.channel = interaction.channel
             self.author = interaction.user
             self.guild = interaction.guild
-            self.mentions = []
+            self.user_mentions = []
 
-            if "resolved" in interaction.data.keys():
-                self.mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["users"].keys()]
+            if "resolved" in interaction.data:
+                if "members" in interaction.data["resolved"]:
+                    self.user_mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["members"].keys()]
+                elif "users" in interaction.data["resolved"]:
+                    self.user_mentions = [self.bot.get_user(int(i)) for i in interaction.data["resolved"]["users"].keys()]
         else:
             self._interaction = None
             self._message = message
@@ -62,7 +65,7 @@ class Context:
             self.channel = message.channel
             self.author = message.author
             self.guild = message.guild
-            self.mentions = []
+            self.user_mentions = []
 
         self._sent_message = None
 
@@ -76,6 +79,14 @@ class Context:
 
     async def send_message(self, text: str, **args):
         """Sends the user a message. Returns the message object. Only call once per command."""
+
+        if "allowed_mentions" not in args and self.guild is not None:
+            everyone = self.author.guild_permissions.mention_everyone
+            args["allowed_mentions"] = _discord.AllowedMentions(
+                everyone=everyone,
+                users=everyone if everyone else [self.author,],
+                roles=everyone if everyone else [role for role in self.guild.roles if role.mentionable]
+            )
 
         if self._is_basic_command:
             self._sent_message = await self.channel.send(text, **args)

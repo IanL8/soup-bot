@@ -76,8 +76,8 @@ class CommandList(_commands.CommandList):
         if len(username) == 0:
             message = str(context.author.avatar)
 
-        elif len(context.mentions) > 0:
-            message = str(context.mentions[0].avatar)
+        elif len(context.user_mentions) > 0:
+            message = str(context.user_mentions[0].avatar)
 
         else:
             member = context.guild.get_member_named(username)
