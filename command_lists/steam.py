@@ -10,7 +10,7 @@ import soup_util.constants as _constants
 from soup_util.soup_logging import logger as _logger
 
 
-_API_USE_COOLDOWN = 0.5
+_API_USE_COOLDOWN = 10
 
 
 def _make_searchable_name(name):
