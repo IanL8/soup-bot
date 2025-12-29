@@ -10,7 +10,7 @@ import soup_util.constants as _constants
 from soup_util.soup_logging import logger as _logger
 
 
-_API_USE_COOLDOWN = 0.5
+_API_USE_COOLDOWN = 10
 
 
 def _make_searchable_name(name):
@@ -81,26 +81,18 @@ def _background_apps_refresh():
         start_time = _time.time()
 
         apps = _get_apps()
-        app_ids = _db_steam_apps.get_all_app_ids()
         app_ids_in_need_of_update = _db_steam_apps.get_oldest_by_update_time(MAX_APPS)
 
         new_apps = []
         update_apps = []
-        removed_from_steam = []
 
         for app in apps:
-            if app["appid"] not in app_ids:
+            if _db_steam_apps.contains(app["appid"]):
                 new_apps.append(app)
             if app["appid"] in app_ids_in_need_of_update:
                 update_apps.append(app)
 
         _fill_table(new_apps[:MAX_APPS] + update_apps[:max(0, MAX_APPS - len(new_apps))])
-
-        for app_id in app_ids:
-            if not any(x["appid"] == app_id for x in apps):
-                removed_from_steam.append(app_id)
-
-        _db_steam_apps.remove_all(removed_from_steam)
 
         _time.sleep(max(0.0, HALF_HOUR - (_time.time() - start_time)))
 
