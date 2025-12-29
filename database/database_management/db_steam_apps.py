@@ -16,7 +16,7 @@ def is_empty() -> bool:
     return empty
 
 def contains(app_id) -> bool:
-    """Returns true if this app is in the table. If not, returns false."""
+    """Returns True if this app is in the table. If not, returns False."""
 
     conn = _soup_sql.connect()
 
