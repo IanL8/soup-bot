@@ -49,13 +49,13 @@ class Context:
             self.channel = interaction.channel
             self.author = interaction.user
             self.guild = interaction.guild
-            self.mentions = []
+            self.user_mentions = []
 
             if "resolved" in interaction.data:
                 if "members" in interaction.data["resolved"]:
-                    self.mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["members"].keys()]
+                    self.user_mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["members"].keys()]
                 elif "users" in interaction.data["resolved"]:
-                    self.mentions = [self.bot.get_user(int(i)) for i in interaction.data["resolved"]["users"].keys()]
+                    self.user_mentions = [self.bot.get_user(int(i)) for i in interaction.data["resolved"]["users"].keys()]
         else:
             self._interaction = None
             self._message = message
@@ -65,7 +65,7 @@ class Context:
             self.channel = message.channel
             self.author = message.author
             self.guild = message.guild
-            self.mentions = []
+            self.user_mentions = []
 
         self._sent_message = None
 
