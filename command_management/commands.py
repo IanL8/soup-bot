@@ -51,8 +51,11 @@ class Context:
             self.guild = interaction.guild
             self.mentions = []
 
-            if "resolved" in interaction.data.keys():
-                self.mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["users"].keys()]
+            if "resolved" in interaction.data:
+                if "members" in interaction.data["resolved"]:
+                    self.mentions = [self.guild.get_member(int(i)) for i in interaction.data["resolved"]["members"].keys()]
+                elif "users" in interaction.data["resolved"]:
+                    self.mentions = [self.bot.get_user(int(i)) for i in interaction.data["resolved"]["users"].keys()]
         else:
             self._interaction = None
             self._message = message
