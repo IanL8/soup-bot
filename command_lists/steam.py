@@ -87,7 +87,7 @@ def _background_apps_refresh():
         update_apps = []
 
         for app in apps:
-            if app["appid"] not in app_ids:
+            if _db_steam_apps.contains(app["appid"]):
                 new_apps.append(app)
             if app["appid"] in app_ids_in_need_of_update:
                 update_apps.append(app)
