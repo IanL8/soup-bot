@@ -46,7 +46,7 @@ def add_or_update(app_id, name, searchable_name, search_priority, last_update_ti
     conn.commit()
     conn.close()
 
-def get_all_app_ids() -> [int]:
+def get_all_app_ids() -> list[int]:
     """Returns a list of all app ids in the table."""
 
     conn = _soup_sql.connect()
