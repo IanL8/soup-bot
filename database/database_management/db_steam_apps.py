@@ -10,10 +10,10 @@ def is_empty() -> bool:
 
     conn = _soup_sql.connect()
 
-    _is_empty = len(_soup_sql.query(conn, "SELECT app_id FROM SteamApps;").values) == 0
+    empty = len(_soup_sql.query(conn, "SELECT app_id FROM SteamApps;").values) == 0
 
     conn.close()
-    return _is_empty
+    return empty
 
 def add_or_update(app_id, name, searchable_name, search_priority, last_update_time):
     """Adds a steam app to SteamApps, or updates its data if its already in the table."""
