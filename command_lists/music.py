@@ -234,6 +234,18 @@ class CommandList(_commands.CommandList):
         await player.skip()
         await context.confirm()
 
+    @_commands.command("clear-queue", desc="Clears the queue.")
+    async def clear_queue(self, context):
+        player = await self._create_player(context)
+
+        if not player.is_playing:
+            raise _commands.CommandError("No track is currently playing.")
+        elif len(player.queue) == 0:
+            raise _commands.CommandError("The queue is empty.")
+
+        player.queue.clear()
+        await context.confirm()
+
     @_commands.command("queue", desc="Displays the queue.")
     async def queue(self, context):
         player = await self._create_player(context)
