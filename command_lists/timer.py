@@ -14,9 +14,8 @@ class CommandList(_commands.CommandList):
         timers = _db_timers.get_all()
 
         for timer in timers:
-            channel = self.client.get_channel(timer["channel_id"])
             _asyncio.run_coroutine_threadsafe(
-                _timer(timer["uid"], timer["name"], channel, timer["end_time"] - _time(), timer["timer_id"]),
+                _timer(self.client, timer["uid"], timer["name"], timer["channel_id"], timer["end_time"] - _time(), timer["timer_id"]),
                 self.client.loop
             )
 
@@ -50,7 +49,7 @@ class CommandList(_commands.CommandList):
         else:
             timer_id = _db_timers.add(context.author.id, name, context.channel.id, int(_time()) + duration_seconds)
             _asyncio.run_coroutine_threadsafe(
-                _timer(context.author.id, name, context.channel, duration_seconds, timer_id),
+                _timer(context.bot, context.author.id, name, context.channel.id, duration_seconds, timer_id),
                 context.bot.loop
             )
 
@@ -82,7 +81,7 @@ class _ChannelSelector(_discord.ui.Select):
 
         timer_id = _db_timers.add(interaction.user.id, self.name, channel.id, int(_time()) + self.duration)
         _asyncio.run_coroutine_threadsafe(
-            _timer(interaction.user.id, self.name, channel, self.duration, timer_id),
+            _timer(interaction.client, interaction.user.id, self.name, channel.id, self.duration, timer_id),
             interaction.client.loop
         )
 
@@ -129,9 +128,30 @@ def _gather_usable_channels(mem1, mem2, text_channels):
 
     return channels
 
-async def _timer(uid, name, channel, duration, timer_id):
+async def _timer(bot, uid, name, channel_id, duration, timer_id):
     if duration > 0:
         await _asyncio.sleep(duration)
 
-    await channel.send(f"{name} <@{uid}>")
+    await bot.wait_until_ready()
+
+    channel = bot.get_channel(channel_id)
+
+    if channel is not None \
+            and channel.guild is not None \
+            and channel.permissions_for(channel.guild.get_member(bot.user.id)).send_messages \
+            and channel.permissions_for(channel.guild.get_member(bot.user.id)).view_channel:
+
+        await channel.send(f"{name} <@{uid}>")
+    else:
+        try:
+            user = bot.get_user(uid)
+
+            if not user.dm_channel:
+                await user.create_dm()
+
+            await user.dm_channel.send(f"{name} <@{uid}>")
+
+        except (_discord.NotFound, _discord.Forbidden, Exception):
+            pass
+
     _db_timers.remove(timer_id)
