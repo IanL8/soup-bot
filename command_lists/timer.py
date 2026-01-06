@@ -132,5 +132,26 @@ async def _timer(bot, uid, name, channel_id, duration, timer_id):
     if duration > 0:
         await _asyncio.sleep(duration)
 
-    await channel.send(f"{name} <@{uid}>")
+    await bot.wait_until_ready()
+
+    channel = bot.get_channel(channel_id)
+
+    if channel is not None \
+            and channel.guild is not None \
+            and channel.permissions_for(channel.guild.get_member(bot.user.id)).send_messages \
+            and channel.permissions_for(channel.guild.get_member(bot.user.id)).view_channel:
+
+        await channel.send(f"{name} <@{uid}>")
+    else:
+        try:
+            user = bot.get_user(uid)
+
+            if not user.dm_channel:
+                await user.create_dm()
+
+            await user.dm_channel.send(f"{name} <@{uid}>")
+
+        except (_discord.NotFound, _discord.Forbidden, Exception):
+            pass
+
     _db_timers.remove(timer_id)
