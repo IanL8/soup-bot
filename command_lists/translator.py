@@ -24,29 +24,44 @@ class CommandList(_commands.CommandList):
                        desc="Translates some provided text to English. Can also give languages to translate to or from.",
                        autocomplete_fields=_AUTOCOMPLETE)
     async def translate_text(self, context, text: str, from_language: str = "auto", to_language: str = "english"):
-        # deepl has better translations, but has bad auto-detection and worse coverage than azure
-        # this method uses azure for detection and deepl for translations
         # if deepl does not have the language, azure is used as a backup
+        # azure is used for automatic language detection
 
-        if to_language.lower() not in _constants.DEEPL_TRANSLATION_KEY["target"].keys() \
-                or (from_language.lower() != "auto" and from_language.lower() not in _constants.DEEPL_TRANSLATION_KEY["source"].keys()):
-            await context.send_message(_azure_translator.translate(text, from_language, to_language, ))
-            return
+        if from_language.lower() not in _constants.AZURE_TRANSLATION_KEY and from_language.lower() != "auto":
+            raise _commands.CommandError("Language to translate from is not available.")
+        elif to_language.lower() not in _constants.AZURE_TRANSLATION_KEY:
+            raise _commands.CommandError("Language to translate to is not available.")
 
-        if from_language == "auto":
+        translator = "deepl"
+
+        # from
+        if from_language.lower() == "auto":
             source_lang = _azure_translator.detect(text)
 
             if source_lang is None:
-                raise _commands.CommandError("Not able to generate a translation.")
+                raise _commands.CommandError("Not able to detect the language.")
+            elif source_lang.lower() not in [language_id.lower() for language_id in _constants.DEEPL_TRANSLATION_KEY["source"].values()]:
+                translator = "azure"
 
-            elif source_lang not in _constants.DEEPL_TRANSLATION_KEY["source"].values():
-                await context.send_message(_azure_translator.translate(text, from_language, to_language))
-                return
-        else:
+        elif from_language.lower() in _constants.DEEPL_TRANSLATION_KEY["source"]:
             source_lang = _constants.DEEPL_TRANSLATION_KEY["source"][from_language.lower()]
+        else:
+            source_lang = _constants.AZURE_TRANSLATION_KEY[from_language.lower()]
+            translator = "azure"
 
-        await context.send_message(_deepl_translator.translate_text(
-            text,
-            source_lang=source_lang,
-            target_lang=_constants.DEEPL_TRANSLATION_KEY["target"][to_language.lower()]
-        ))
+        # to
+        if translator == "deepl" and to_language.lower() in _constants.DEEPL_TRANSLATION_KEY["target"]:
+            target_lang = _constants.DEEPL_TRANSLATION_KEY["target"][to_language.lower()]
+        else:
+            target_lang = _constants.AZURE_TRANSLATION_KEY[to_language.lower()]
+
+        # translate
+        if translator == "deepl":
+            translation = _deepl_translator.translate_text(text, source_lang=source_lang, target_lang=target_lang)
+        else:
+            translation = _azure_translator.translate(text, source_lang, target_lang)
+
+        if translation is None:
+            raise _commands.CommandError("An error occurred during the translation.")
+
+        await context.send_message(translation)
