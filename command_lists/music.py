@@ -42,13 +42,6 @@ class CommandList(_commands.CommandList):
                 region=_constants.NODE1_REGION,
                 name=_constants.NODE1_NAME
             )
-            self.client.lavalink.add_node(
-                host=_constants.NODE2_HOST,
-                port=_constants.NODE2_PORT,
-                password=_constants.NODE2_PASSWORD,
-                region=_constants.NODE2_REGION,
-                name=_constants.NODE2_NAME
-            )
 
         self.lavalink = self.client.lavalink
         self.lavalink.add_event_hook(self._on_track_start, event=_events.TrackStartEvent)
