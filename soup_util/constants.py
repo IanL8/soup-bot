@@ -32,12 +32,6 @@ NODE1_PASSWORD = _getenv("NODE1_PASSWORD")
 NODE1_REGION = _getenv("NODE1_REGION")
 NODE1_NAME = _getenv("NODE1_NAME")
 
-NODE2_HOST = _getenv("NODE2_HOST")
-NODE2_PORT = _getenv("NODE2_PORT")
-NODE2_PASSWORD = _getenv("NODE2_PASSWORD")
-NODE2_REGION = _getenv("NODE2_REGION")
-NODE2_NAME = _getenv("NODE2_NAME")
-
 # txt files
 WORD_LIST = _read_file_to_list("resources/word_list.txt")
 WORDLE_LIST = _read_file_to_list("resources/wordle_list.txt")
